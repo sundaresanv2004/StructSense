@@ -1,23 +1,11 @@
 import type { ReactNode } from "react"
+import Link from "next/link"
 import SetTheme from "@/components/shared/setTheme"
 import { BackgroundRippleEffect } from "@/components/ui/background-ripple-effect"
-import { Button } from "@/components/ui/button"
-import { ArrowLeft } from "lucide-react"
-import Link from "next/link"
 
 export default function AuthLayout({ children }: { children: ReactNode }) {
     return (
         <div className="min-h-screen flex flex-col items-center justify-center px-4 pb-4 pt-20 md:p-8 relative overflow-hidden bg-gradient-to-b from-background via-background to-background dark:from-gray-950 dark:via-gray-950 dark:to-gray-900 w-full">
-            {/* Back Button - Top Left */}
-            <div className="absolute top-4 left-4 z-50">
-                <Link href="/">
-                    <Button variant="ghost" size="sm">
-                        <ArrowLeft className="h-4 w-4 mr-2" />
-                        Back to Home
-                    </Button>
-                </Link>
-            </div>
-
             {/* Theme Toggle - Top Right */}
             <div className="absolute top-4 right-4 z-50">
                 <SetTheme />
