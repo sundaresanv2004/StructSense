@@ -3,19 +3,30 @@ version: '3.8'
 services:
   backend:
     build: ./backend
+    container_name: structsense-backend
     ports:
       - "8000:8000"
-    volumes:
-      - ./backend:/app
-    environment:
-      - WATCHFILES_FORCE_POLLING=true
+    restart: always
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/docs" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   frontend:
     build: ./frontend
+    container_name: structsense-frontend
     ports:
       - "3000:3000"
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
+    environment:
+      - NODE_ENV=production
+    restart: always
     depends_on:
       - backend
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:3000" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
