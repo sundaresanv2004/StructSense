@@ -7,6 +7,11 @@ services:
     ports:
       - "8000:8000"
     restart: always
+    environment:
+      - DATABASE_URL=postgresql://admin:password@timescaledb:5432/iot
+    depends_on:
+      timescaledb:
+        condition: service_healthy
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8000/docs" ]
       interval: 30s
@@ -30,3 +35,23 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+
+  timescaledb:
+    image: timescale/timescaledb:latest-pg14
+    container_name: timescaledb
+    environment:
+      POSTGRES_DB: iot
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+    volumes:
+      - timescale_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U admin -d iot" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: always
+
+volumes:
+  timescale_data:
+    name: structsense_timescale_data
