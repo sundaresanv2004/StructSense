@@ -1,0 +1,30 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# UV
+.uv_cache
+
+# Docker
+Dockerfile
+.dockerignore
+
+# IDEs
+.vscode
+.idea
+
+# Local env
+.env
+.env.local
