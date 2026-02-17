@@ -6,6 +6,7 @@ from app.core.db import engine, Base
 from app.api.routes import api_router
 import app.models # Import models to register them with Base
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Create tables on startup
