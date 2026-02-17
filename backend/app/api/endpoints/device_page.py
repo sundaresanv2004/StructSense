@@ -45,13 +45,15 @@ async def register_device_form(
     type: str = Form(...),
     building_name: str = Form(None),
     location_description: str = Form(None),
-    baseline_distance_cm: float = Form(...),
+    tilt_threshold_percent: float = Form(50.0),
+    distance_threshold_percent: float = Form(50.0),
+    notification_email: Optional[str] = Form(None),
     assign_user_id: Optional[int] = Form(None),
     access_level: Optional[str] = Form("viewer"),
     db: AsyncSession = Depends(get_db)
 ):
     """
-    Handle device registration from HTML form with optional user assignment.
+    Handle device registration from HTML form with threshold settings.
     """
     try:
         # Create device
@@ -61,8 +63,9 @@ async def register_device_form(
             type=type,
             building_name=building_name,
             location_description=location_description,
-            baseline_distance_cm=baseline_distance_cm,
-            installed_at=datetime.now()
+            tilt_threshold_percent=tilt_threshold_percent,
+            distance_threshold_percent=distance_threshold_percent,
+            notification_email=notification_email if notification_email else None
         )
         
         device = await DeviceService.register_device(db, device_data)

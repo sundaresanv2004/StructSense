@@ -254,9 +254,26 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="baseline_distance_cm">Baseline Distance (cm) <span class="required">*</span></label>
-                        <input type="number" id="baseline_distance_cm" name="baseline_distance_cm" step="0.01" required
-                            placeholder="e.g., 210.5">
+                        <label for="tilt_threshold_percent">Tilt Threshold (%) <span class="required">*</span></label>
+                        <input type="number" id="tilt_threshold_percent" name="tilt_threshold_percent" step="0.1"
+                            value="50.0" required min="0" max="100" placeholder="e.g., 50.0">
+                        <small style="color: #777; margin-top: 4px;">Alert when tilt changes by this percentage</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="distance_threshold_percent">Distance Threshold (%) <span
+                                class="required">*</span></label>
+                        <input type="number" id="distance_threshold_percent" name="distance_threshold_percent"
+                            step="0.1" value="50.0" required min="0" max="100" placeholder="e.g., 50.0">
+                        <small style="color: #777; margin-top: 4px;">Alert when distance changes by this
+                            percentage</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="notification_email">Notification Email</label>
+                        <input type="email" id="notification_email" name="notification_email"
+                            placeholder="e.g., alerts@structsense.io">
+                        <small style="color: #777; margin-top: 4px;">Email to receive threshold breach alerts</small>
                     </div>
 
                     <div class="form-group">
@@ -295,7 +312,8 @@
                         <th>Type</th>
                         <th>Building</th>
                         <th>Location</th>
-                        <th>Baseline (cm)</th>
+                        <th>Tilt Threshold</th>
+                        <th>Distance Threshold</th>
                         <th>Status</th>
                         <th>Last Seen</th>
                     </tr>
@@ -308,7 +326,8 @@
                         <td>{{ device.type }}</td>
                         <td>{{ device.building_name or '—' }}</td>
                         <td>{{ device.location_description or '—' }}</td>
-                        <td>{{ "%.2f"|format(device.baseline_distance_cm) }}</td>
+                        <td>{{ "%.1f"|format(device.tilt_threshold_percent) }}%</td>
+                        <td>{{ "%.1f"|format(device.distance_threshold_percent) }}%</td>
                         <td>
                             {% if device.connection_status %}
                             <span class="status online">● Online</span>

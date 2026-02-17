@@ -20,9 +20,11 @@ export default function DashboardPage() {
                             System Health
                         </Link>
                     </Button>
-                    <Button>
-                        <Zap className="mr-2 h-4 w-4" />
-                        Add Device
+                    <Button asChild>
+                        <Link href="/dashboard/devices">
+                            <Zap className="mr-2 h-4 w-4" />
+                            View Devices
+                        </Link>
                     </Button>
                 </div>
             </div>

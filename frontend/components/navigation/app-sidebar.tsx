@@ -9,6 +9,7 @@ import {
   Settings,
   HelpCircle,
   Zap,
+  Gauge,
 } from "lucide-react"
 import { NavMain } from "./nav-main"
 import { NavFooter } from "./nav-footer"
@@ -30,11 +31,13 @@ const data = {
       title: "Dashboard",
       url: "/dashboard",
       icon: LayoutDashboard,
+      isActive: true,
     },
     {
       title: "Devices",
       url: "/dashboard/devices",
-      icon: Cpu,
+      icon: Gauge,
+      isActive: false,
     },
     {
       title: "Analytics",

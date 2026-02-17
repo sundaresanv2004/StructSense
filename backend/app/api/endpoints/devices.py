@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_db
-from app.schemas.device import DeviceRegister, DeviceResponse
+from app.schemas.device import DeviceRegister, DeviceResponse, DeviceUpdate
 from app.services.device_service import DeviceService
 
 router = APIRouter()
@@ -63,4 +63,30 @@ async def get_device(
             detail=f"Device with ID {device_id} not found"
         )
     
+    return device
+
+
+@router.patch("/{device_id}", response_model=DeviceResponse)
+async def update_device(
+    device_id: int,
+    device_data: DeviceUpdate,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Update device details (name, location, thresholds, email).
+    
+    Cannot update device_uid or type for data integrity.
+    
+    Args:
+        device_id: Device ID to update
+        device_data: Fields to update
+        db: Database session
+        
+    Returns:
+        Updated device details
+        
+    Raises:
+        HTTPException 404: If device not found
+    """
+    device = await DeviceService.update_device(db, device_id, device_data)
     return device

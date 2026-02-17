@@ -1,8 +1,10 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel
 from datetime import datetime
 
 class SensorIngestRequest(BaseModel):
-    """Schema for ESP32 sensor data ingestion"""
+    """
+    Schema for ESP32 sensor data ingestion.
+    """
     device_uid: str
     tilt_x: float
     tilt_y: float
@@ -10,15 +12,25 @@ class SensorIngestRequest(BaseModel):
     distance_cm: float
 
 class SensorReadingResponse(BaseModel):
-    """Schema for sensor reading response"""
+    """
+    Schema for sensor reading response with threshold monitoring.
+    """
     id: int
     device_id: int
     tilt_x: float
     tilt_y: float
     tilt_z: float
     distance_cm: float
-    settlement_cm: float
-    tilt_status: str
+    
+    # Percentage changes from initial reading
+    tilt_change_percent: float | None
+    distance_change_percent: float | None
+    
+    # Threshold breach flags
+    tilt_threshold_breached: bool
+    distance_threshold_breached: bool
+    
     created_at: datetime
     
-    model_config = ConfigDict(from_attributes=True)
+    class Config:
+        from_attributes = True

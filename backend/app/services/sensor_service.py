@@ -1,95 +1,106 @@
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+from app.models.sensor_reading import SensorReading
+from app.models.device import Device
+from app.schemas.sensor import SensorIngestRequest
 from datetime import datetime, timezone
 import math
-from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import HTTPException, status
-
-from app.models.device import Device
-from app.models.sensor_reading import SensorReading
-from app.schemas.sensor import SensorIngestRequest
-
 
 class SensorService:
-    """Service layer for sensor data ingestion and processing"""
+    """
+    Service for processing ESP32 sensor data with threshold-based monitoring.
     
-    # Tilt status thresholds (in degrees)
-    TILT_SAFE_THRESHOLD = 2.0
-    TILT_WARNING_THRESHOLD = 5.0
-    TILT_RISK_THRESHOLD = 10.0
+    This service implements percentage change detection from the initial reading,
+    replacing the fixed baseline distance approach.
+    """
     
     @staticmethod
-    def calculate_settlement(baseline_distance_cm: float, measured_distance_cm: float) -> float:
+    async def get_initial_reading(db: AsyncSession, device_id: int) -> SensorReading | None:
         """
-        Calculate settlement based on baseline and measured distance.
-        
-        Settlement = baseline_distance_cm - measured_distance_cm
-        
-        Positive settlement indicates the structure has settled (distance increased).
-        Negative settlement indicates upward movement (distance decreased).
+        Get the first sensor reading for a device (used as baseline).
         
         Args:
-            baseline_distance_cm: Baseline distance when device was installed
-            measured_distance_cm: Current measured distance
+            db: Database session
+            device_id: Device ID
             
         Returns:
-            Settlement in centimeters
+            First SensorReading or None if no readings exist
         """
-        return baseline_distance_cm - measured_distance_cm
+        result = await db.execute(
+            select(SensorReading)
+            .where(SensorReading.device_id == device_id)
+            .order_by(SensorReading.created_at.asc())
+            .limit(1)
+        )
+        return result.scalars().first()
     
     @staticmethod
     def calculate_tilt_angle(tilt_x: float, tilt_y: float, tilt_z: float) -> float:
         """
-        Calculate total tilt angle from accelerometer readings.
-        
-        Uses 3D vector magnitude to determine overall tilt from vertical.
-        Assumes tilt_z represents vertical axis (gravity ~9.8 m/s²).
+        Calculate total tilt angle in degrees from accelerometer readings.
         
         Args:
-            tilt_x: X-axis tilt value
-            tilt_y: Y-axis tilt value
-            tilt_z: Z-axis tilt value
+            tilt_x: X-axis tilt
+            tilt_y: Y-axis tilt
+            tilt_z: Z-axis tilt
             
         Returns:
-            Tilt angle in degrees
+            Total tilt angle in degrees
         """
-        # Calculate the magnitude of tilt vector
-        tilt_magnitude = math.sqrt(tilt_x**2 + tilt_y**2)
-        
-        # Calculate angle from vertical (Z-axis)
-        # Using arctan to get angle in radians, then convert to degrees
-        if tilt_z != 0:
-            tilt_angle_rad = math.atan2(tilt_magnitude, abs(tilt_z))
-            tilt_angle_deg = math.degrees(tilt_angle_rad)
-        else:
-            # If z is 0, assume maximum tilt (90 degrees)
-            tilt_angle_deg = 90.0
-        
-        return tilt_angle_deg
+        return math.sqrt(tilt_x**2 + tilt_y**2 + tilt_z**2)
     
     @staticmethod
-    def evaluate_tilt_status(tilt_angle: float) -> str:
+    def calculate_tilt_change_percent(initial_angle: float, current_angle: float) -> float:
         """
-        Evaluate tilt status based on calculated tilt angle.
-        
-        Thresholds:
-        - SAFE: < 2 degrees
-        - WARNING: 2-5 degrees
-        - RISK: 5-10 degrees
-        - DANGER: > 10 degrees
+        Calculate percentage change in tilt angle from initial reading.
         
         Args:
-            tilt_angle: Tilt angle in degrees
+            initial_angle: Tilt angle from first reading
+            current_angle: Current tilt angle
             
         Returns:
-            Tilt status string (SAFE, WARNING, RISK, DANGER)
+            Percentage change (absolute value)
         """
-        if tilt_angle < SensorService.TILT_SAFE_THRESHOLD:
-            return "SAFE"
-        elif tilt_angle < SensorService.TILT_WARNING_THRESHOLD:
-            return "WARNING"
-        elif tilt_angle < SensorService.TILT_RISK_THRESHOLD:
-            return "RISK"
-        else:
-            return "DANGER"
+        if initial_angle == 0:
+            return 0.0 if current_angle == 0 else 100.0
+        return abs(((current_angle - initial_angle) / initial_angle) * 100)
+    
+    @staticmethod
+    def calculate_distance_change_percent(initial_distance: float, current_distance: float) -> float:
+        """
+        Calculate percentage change in distance from initial reading.
+        
+        Args:
+            initial_distance: Distance from first reading
+            current_distance: Current distance
+            
+        Returns:
+            Percentage change (absolute value)
+        """
+        if initial_distance == 0:
+            return 0.0 if current_distance == 0 else 100.0
+        return abs(((current_distance - initial_distance) / initial_distance) * 100)
+    
+    @staticmethod
+    def check_thresholds(
+        device: Device,
+        tilt_change_percent: float,
+        distance_change_percent: float
+    ) -> tuple[bool, bool]:
+        """
+        Check if percentage changes exceed device thresholds.
+        
+        Args:
+            device: Device with threshold settings
+            tilt_change_percent: Calculated tilt change percentage
+            distance_change_percent: Calculated distance change percentage
+            
+        Returns:
+            Tuple of (tilt_breached, distance_breached)
+        """
+        tilt_breached = tilt_change_percent > device.tilt_threshold_percent
+        distance_breached = distance_change_percent > device.distance_threshold_percent
+        return tilt_breached, distance_breached
     
     @staticmethod
     async def ingest_sensor_data(
@@ -98,54 +109,83 @@ class SensorService:
         sensor_data: SensorIngestRequest
     ) -> SensorReading:
         """
-        Process and store sensor reading from ESP32 device.
+        Process incoming sensor data with threshold monitoring.
         
-        Steps:
-        1. Calculate settlement from baseline
-        2. Calculate tilt angle from accelerometer data
-        3. Evaluate tilt status
-        4. Create sensor reading record
-        5. Update device connection status
+        The first reading becomes the baseline. All subsequent readings are
+        compared against this initial reading to calculate percentage changes.
         
         Args:
             db: Database session
-            device: Device object (already validated)
+            device: Device instance
             sensor_data: Sensor data from ESP32
             
         Returns:
-            Created sensor reading
+            Created SensorReading instance
         """
-        # Calculate settlement
-        settlement_cm = SensorService.calculate_settlement(
-            device.baseline_distance_cm,
-            sensor_data.distance_cm
+        # Get initial reading (baseline)
+        initial_reading = await SensorService.get_initial_reading(db, device.id)
+        
+        # Calculate current tilt angle
+        current_tilt_angle = SensorService.calculate_tilt_angle(
+            sensor_data.tilt_x, sensor_data.tilt_y, sensor_data.tilt_z
         )
         
-        # Calculate tilt angle
-        tilt_angle = SensorService.calculate_tilt_angle(
-            sensor_data.tilt_x,
-            sensor_data.tilt_y,
-            sensor_data.tilt_z
-        )
-        
-        # Evaluate tilt status
-        tilt_status = SensorService.evaluate_tilt_status(tilt_angle)
-        
-        # Create sensor reading
-        reading = SensorReading(
-            device_id=device.id,
-            tilt_x=sensor_data.tilt_x,
-            tilt_y=sensor_data.tilt_y,
-            tilt_z=sensor_data.tilt_z,
-            distance_cm=sensor_data.distance_cm,
-            settlement_cm=settlement_cm,
-            tilt_status=tilt_status,
-            created_at=datetime.now(timezone.utc)
-        )
+        # If this is the first reading, set as baseline
+        if initial_reading is None:
+            reading = SensorReading(
+                device_id=device.id,
+                tilt_x=sensor_data.tilt_x,
+                tilt_y=sensor_data.tilt_y,
+                tilt_z=sensor_data.tilt_z,
+                distance_cm=sensor_data.distance_cm,
+                tilt_change_percent=0.0,
+                distance_change_percent=0.0,
+                tilt_threshold_breached=False,
+                distance_threshold_breached=False,
+                email_sent=False,
+                created_at=datetime.now(timezone.utc)
+            )
+        else:
+            # Calculate changes from initial reading
+            initial_tilt_angle = SensorService.calculate_tilt_angle(
+                initial_reading.tilt_x, initial_reading.tilt_y, initial_reading.tilt_z
+            )
+            
+            tilt_change_percent = SensorService.calculate_tilt_change_percent(
+                initial_tilt_angle, current_tilt_angle
+            )
+            distance_change_percent = SensorService.calculate_distance_change_percent(
+                initial_reading.distance_cm, sensor_data.distance_cm
+            )
+            
+            # Check thresholds
+            tilt_breached, distance_breached = SensorService.check_thresholds(
+                device, tilt_change_percent, distance_change_percent
+            )
+            
+            # Create reading
+            reading = SensorReading(
+                device_id=device.id,
+                tilt_x=sensor_data.tilt_x,
+                tilt_y=sensor_data.tilt_y,
+                tilt_z=sensor_data.tilt_z,
+                distance_cm=sensor_data.distance_cm,
+                tilt_change_percent=tilt_change_percent,
+                distance_change_percent=distance_change_percent,
+                tilt_threshold_breached=tilt_breached,
+                distance_threshold_breached=distance_breached,
+                email_sent=False,
+                created_at=datetime.now(timezone.utc)
+            )
+            
+            # TODO: Send email if threshold breached and notification_email is set
+            # if (tilt_breached or distance_breached) and device.notification_email:
+            #     await EmailService.send_threshold_alert(device, reading, tilt_breached, distance_breached)
+            #     reading.email_sent = True
         
         db.add(reading)
         
-        # Update device connection status and last_seen
+        # Update device connection status
         device.connection_status = True
         device.last_seen_at = datetime.now(timezone.utc)
         
