@@ -8,7 +8,7 @@ services:
       - "8000:8000"
     restart: always
     environment:
-      - DATABASE_URL=postgresql://admin:password@timescaledb:5432/iot
+      - DATABASE_URL=postgresql+asyncpg://admin:password@timescaledb:5432/iot
     depends_on:
       timescaledb:
         condition: service_healthy
