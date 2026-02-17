@@ -37,6 +37,7 @@ export default function DevicesPage() {
     const [devices, setDevices] = useState<Device[]>([])
     const [loading, setLoading] = useState(true)
     const [showDialog, setShowDialog] = useState(false)
+    const [showAddDeviceDialog, setShowAddDeviceDialog] = useState(false)
     const [editingDevice, setEditingDevice] = useState<Device | null>(null)
     const [formData, setFormData] = useState({
         name: "",
@@ -139,8 +140,8 @@ export default function DevicesPage() {
                     <h1 className="text-3xl font-bold tracking-tight">Devices</h1>
                     <p className="text-muted-foreground">Manage your registered ESP32 devices</p>
                 </div>
-                <Button onClick={() => toast.info("Please contact your developer to add new devices")}>
-                    <Plus className="mr-2 h-4 w-4" />
+                <Button onClick={() => setShowAddDeviceDialog(true)}>
+                    <Plus className="h-4 w-4" />
                     Add New Device
                 </Button>
             </div>
@@ -369,6 +370,34 @@ export default function DevicesPage() {
                         </Button>
                         <Button onClick={handleUpdate}>
                             Save Changes
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Add Device Restriction Dialog */}
+            <Dialog open={showAddDeviceDialog} onOpenChange={setShowAddDeviceDialog}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Add New Device</DialogTitle>
+                        <DialogDescription>
+                            Device registration is restricted to administrators.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="py-4">
+                        <p className="text-sm text-muted-foreground mb-2">
+                            You cannot add a new device directly.
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                            Contact the developer and add my contact link{" "}
+                            <a href="mailto:contact@sundaresan.dev" className="text-primary hover:underline font-medium">
+                                contact@sundaresan.dev
+                            </a>
+                        </p>
+                    </div>
+                    <DialogFooter>
+                        <Button onClick={() => setShowAddDeviceDialog(false)}>
+                            Close
                         </Button>
                     </DialogFooter>
                 </DialogContent>

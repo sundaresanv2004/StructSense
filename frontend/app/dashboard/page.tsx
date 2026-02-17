@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Activity, Cpu, Server, Users, Zap, ArrowUpRight, AlertTriangle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
+import { SystemHealthDialog } from "@/components/dashboard/system-health-dialog"
 
 export default function DashboardPage() {
     return (
@@ -14,15 +15,15 @@ export default function DashboardPage() {
                     <p className="text-muted-foreground">Overview of your IoT infrastructure.</p>
                 </div>
                 <div className="flex gap-2">
-                    <Button asChild variant="outline">
-                        <Link href="/health">
-                            <Activity className="mr-2 h-4 w-4" />
+                    <SystemHealthDialog>
+                        <Button variant="outline">
+                            <Activity className="h-4 w-4" />
                             System Health
-                        </Link>
-                    </Button>
+                        </Button>
+                    </SystemHealthDialog>
                     <Button asChild>
                         <Link href="/dashboard/devices">
-                            <Zap className="mr-2 h-4 w-4" />
+                            <Zap className="h-4 w-4" />
                             View Devices
                         </Link>
                     </Button>
