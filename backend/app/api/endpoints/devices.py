@@ -8,7 +8,7 @@ from app.services.device_service import DeviceService
 
 router = APIRouter()
 
-@router.post("/register", response_model=DeviceResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=DeviceResponse, status_code=status.HTTP_201_CREATED)
 async def register_device(
     device_data: DeviceRegister,
     db: AsyncSession = Depends(get_db)

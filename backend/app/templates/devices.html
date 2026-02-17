@@ -254,19 +254,19 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="tilt_threshold_percent">Tilt Threshold (%) <span class="required">*</span></label>
+                        <label for="tilt_threshold_percent">Tilt Warning Threshold (%) <span
+                                class="required">*</span></label>
                         <input type="number" id="tilt_threshold_percent" name="tilt_threshold_percent" step="0.1"
                             value="50.0" required min="0" max="100" placeholder="e.g., 50.0">
-                        <small style="color: #777; margin-top: 4px;">Alert when tilt changes by this percentage</small>
+                        <small style="color: #777; margin-top: 4px;">Warning threshold (Alert set to +20%)</small>
                     </div>
 
                     <div class="form-group">
-                        <label for="distance_threshold_percent">Distance Threshold (%) <span
+                        <label for="distance_threshold_percent">Distance Warning Threshold (%) <span
                                 class="required">*</span></label>
                         <input type="number" id="distance_threshold_percent" name="distance_threshold_percent"
                             step="0.1" value="50.0" required min="0" max="100" placeholder="e.g., 50.0">
-                        <small style="color: #777; margin-top: 4px;">Alert when distance changes by this
-                            percentage</small>
+                        <small style="color: #777; margin-top: 4px;">Warning threshold (Alert set to +20%)</small>
                     </div>
 
                     <div class="form-group">
@@ -312,8 +312,8 @@
                         <th>Type</th>
                         <th>Building</th>
                         <th>Location</th>
-                        <th>Tilt Threshold</th>
-                        <th>Distance Threshold</th>
+                        <th>Tilt (Warn/Alert)</th>
+                        <th>Distance (Warn/Alert)</th>
                         <th>Status</th>
                         <th>Last Seen</th>
                     </tr>
@@ -326,8 +326,10 @@
                         <td>{{ device.type }}</td>
                         <td>{{ device.building_name or '—' }}</td>
                         <td>{{ device.location_description or '—' }}</td>
-                        <td>{{ "%.1f"|format(device.tilt_threshold_percent) }}%</td>
-                        <td>{{ "%.1f"|format(device.distance_threshold_percent) }}%</td>
+                        <td>{{ "%.1f"|format(device.tilt_warning_threshold) }}% / {{
+                            "%.1f"|format(device.tilt_alert_threshold) }}%</td>
+                        <td>{{ "%.1f"|format(device.distance_warning_threshold) }}% / {{
+                            "%.1f"|format(device.distance_alert_threshold) }}%</td>
                         <td>
                             {% if device.connection_status %}
                             <span class="status online">● Online</span>

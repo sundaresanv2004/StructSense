@@ -24,10 +24,13 @@ interface Device {
     type: string
     building_name: string | null
     location_description: string | null
-    tilt_threshold_percent: number
-    distance_threshold_percent: number
+    tilt_warning_threshold: number
+    tilt_alert_threshold: number
+    distance_warning_threshold: number
+    distance_alert_threshold: number
     notification_email: string | null
     connection_status: boolean
+    is_online: boolean
     last_seen_at: string | null
     installed_at: string
     created_at: string
@@ -43,8 +46,10 @@ export default function DevicesPage() {
         name: "",
         building_name: "",
         location_description: "",
-        tilt_threshold_percent: 50,
-        distance_threshold_percent: 50,
+        tilt_warning_threshold: 30,
+        tilt_alert_threshold: 45,
+        distance_warning_threshold: 10,
+        distance_alert_threshold: 20,
         notification_email: ""
     })
 
@@ -73,8 +78,10 @@ export default function DevicesPage() {
             name: device.name,
             building_name: device.building_name || "",
             location_description: device.location_description || "",
-            tilt_threshold_percent: device.tilt_threshold_percent,
-            distance_threshold_percent: device.distance_threshold_percent,
+            tilt_warning_threshold: device.tilt_warning_threshold,
+            tilt_alert_threshold: device.tilt_alert_threshold,
+            distance_warning_threshold: device.distance_warning_threshold,
+            distance_alert_threshold: device.distance_alert_threshold,
             notification_email: device.notification_email || ""
         })
         setShowDialog(true)
@@ -93,8 +100,10 @@ export default function DevicesPage() {
                         name: formData.name,
                         building_name: formData.building_name || null,
                         location_description: formData.location_description || null,
-                        tilt_threshold_percent: formData.tilt_threshold_percent,
-                        distance_threshold_percent: formData.distance_threshold_percent,
+                        tilt_warning_threshold: formData.tilt_warning_threshold,
+                        tilt_alert_threshold: formData.tilt_alert_threshold,
+                        distance_warning_threshold: formData.distance_warning_threshold,
+                        distance_alert_threshold: formData.distance_alert_threshold,
                         notification_email: formData.notification_email || null
                     })
                 }
@@ -166,7 +175,7 @@ export default function DevicesPage() {
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold text-green-600">
-                            {devices.filter(d => d.connection_status).length}
+                            {devices.filter(d => d.is_online).length}
                         </div>
                         <p className="text-xs text-muted-foreground">Connected devices</p>
                     </CardContent>
@@ -179,7 +188,7 @@ export default function DevicesPage() {
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold text-red-600">
-                            {devices.filter(d => !d.connection_status).length}
+                            {devices.filter(d => !d.is_online).length}
                         </div>
                         <p className="text-xs text-muted-foreground">Disconnected devices</p>
                     </CardContent>
@@ -214,8 +223,8 @@ export default function DevicesPage() {
                                         </CardDescription>
                                     </div>
                                     <div className="flex gap-2">
-                                        <Badge variant={device.connection_status ? "default" : "secondary"}>
-                                            {device.connection_status ? (
+                                        <Badge variant={device.is_online ? "default" : "secondary"}>
+                                            {device.is_online ? (
                                                 <><Wifi className="h-3 w-3 mr-1" /> Online</>
                                             ) : (
                                                 <><WifiOff className="h-3 w-3 mr-1" /> Offline</>
@@ -244,14 +253,20 @@ export default function DevicesPage() {
                                     </div>
                                 )}
 
-                                <div className="grid grid-cols-2 gap-2 pt-2 border-t">
-                                    <div className="flex flex-col">
-                                        <span className="text-xs text-muted-foreground">Tilt Threshold</span>
-                                        <span className="font-medium text-sm">{device.tilt_threshold_percent}%</span>
+                                <div className="grid grid-cols-2 gap-2 pt-2 border-t text-xs">
+                                    <div className="space-y-1">
+                                        <span className="text-muted-foreground block">Tilt Thresholds</span>
+                                        <div className="flex gap-2">
+                                            <span className="text-orange-500 font-medium">warn: {device.tilt_warning_threshold}%</span>
+                                            <span className="text-red-500 font-medium">alert: {device.tilt_alert_threshold}%</span>
+                                        </div>
                                     </div>
-                                    <div className="flex flex-col">
-                                        <span className="text-xs text-muted-foreground">Distance Threshold</span>
-                                        <span className="font-medium text-sm">{device.distance_threshold_percent}%</span>
+                                    <div className="space-y-1">
+                                        <span className="text-muted-foreground block">Distance Thresholds</span>
+                                        <div className="flex gap-2">
+                                            <span className="text-orange-500 font-medium">warn: {device.distance_warning_threshold}%</span>
+                                            <span className="text-red-500 font-medium">alert: {device.distance_alert_threshold}%</span>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -325,28 +340,43 @@ export default function DevicesPage() {
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label htmlFor="tilt_threshold">Tilt Threshold (%)</Label>
+                                    <Label htmlFor="tilt_warning">Tilt Warning (%)</Label>
                                     <Input
-                                        id="tilt_threshold"
+                                        id="tilt_warning"
                                         type="number"
                                         step="0.1"
-                                        min="0"
-                                        max="100"
-                                        value={formData.tilt_threshold_percent}
-                                        onChange={(e) => setFormData({ ...formData, tilt_threshold_percent: parseFloat(e.target.value) })}
+                                        value={formData.tilt_warning_threshold}
+                                        onChange={(e) => setFormData({ ...formData, tilt_warning_threshold: parseFloat(e.target.value) })}
                                     />
                                 </div>
-
                                 <div className="space-y-2">
-                                    <Label htmlFor="distance_threshold">Distance Threshold (%)</Label>
+                                    <Label htmlFor="tilt_alert">Tilt Alert (%)</Label>
                                     <Input
-                                        id="distance_threshold"
+                                        id="tilt_alert"
                                         type="number"
                                         step="0.1"
-                                        min="0"
-                                        max="100"
-                                        value={formData.distance_threshold_percent}
-                                        onChange={(e) => setFormData({ ...formData, distance_threshold_percent: parseFloat(e.target.value) })}
+                                        value={formData.tilt_alert_threshold}
+                                        onChange={(e) => setFormData({ ...formData, tilt_alert_threshold: parseFloat(e.target.value) })}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="dist_warning">Distance Warning (%)</Label>
+                                    <Input
+                                        id="dist_warning"
+                                        type="number"
+                                        step="0.1"
+                                        value={formData.distance_warning_threshold}
+                                        onChange={(e) => setFormData({ ...formData, distance_warning_threshold: parseFloat(e.target.value) })}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="dist_alert">Distance Alert (%)</Label>
+                                    <Input
+                                        id="dist_alert"
+                                        type="number"
+                                        step="0.1"
+                                        value={formData.distance_alert_threshold}
+                                        onChange={(e) => setFormData({ ...formData, distance_alert_threshold: parseFloat(e.target.value) })}
                                     />
                                 </div>
                             </div>

@@ -1,38 +1,23 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+from typing import List
 
 from app.core.db import get_db
-from app.schemas.sensor import SensorIngestRequest, SensorReadingResponse
+from app.schemas.sensor import SensorIngestRequest, ProcessedSensorDataResponse
+from app.models.processed_sensor_data import ProcessedSensorData
 from app.services.device_service import DeviceService
 from app.services.sensor_service import SensorService
 
 router = APIRouter()
 
-@router.post("/ingest", response_model=SensorReadingResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/ingest", response_model=ProcessedSensorDataResponse, status_code=status.HTTP_201_CREATED)
 async def ingest_sensor_data(
     sensor_data: SensorIngestRequest,
     db: AsyncSession = Depends(get_db)
 ):
     """
     Ingest sensor data from ESP32 device.
-    
-    This endpoint receives telemetry data from ESP32 devices and:
-    1. Validates that the device exists and is registered
-    2. Calculates settlement based on baseline distance
-    3. Calculates tilt angle from accelerometer data
-    4. Evaluates tilt status (SAFE, WARNING, RISK, DANGER)
-    5. Stores the sensor reading
-    6. Updates device connection status
-    
-    Args:
-        sensor_data: Sensor readings from ESP32
-        db: Database session
-        
-    Returns:
-        Created sensor reading with calculated values
-        
-    Raises:
-        HTTPException 404: If device not found (unknown device_uid)
     """
     # Validate device exists
     device = await DeviceService.get_device_by_uid(db, sensor_data.device_uid)
@@ -48,3 +33,20 @@ async def ingest_sensor_data(
     reading = await SensorService.ingest_sensor_data(db, device, sensor_data)
     
     return reading
+
+@router.get("/devices/{device_id}/processed", response_model=List[ProcessedSensorDataResponse])
+async def get_processed_data(
+    device_id: int,
+    limit: int = 100,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Get processed sensor data for a specific device.
+    """
+    result = await db.execute(
+        select(ProcessedSensorData)
+        .where(ProcessedSensorData.device_id == device_id)
+        .order_by(ProcessedSensorData.created_at.desc())
+        .limit(limit)
+    )
+    return result.scalars().all()

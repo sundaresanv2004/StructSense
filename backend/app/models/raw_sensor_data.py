@@ -1,32 +1,24 @@
 from datetime import datetime, timezone
-from sqlalchemy import Integer, Float, ForeignKey, Boolean, DateTime
+from sqlalchemy import Integer, Float, ForeignKey, DateTime
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.db import Base
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .device import Device
+    from .processed_sensor_data import ProcessedSensorData
 
-class SensorReading(Base):
-    __tablename__ = "sensor_readings"
+class RawSensorData(Base):
+    __tablename__ = "raw_sensor_data"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     device_id: Mapped[int] = mapped_column(ForeignKey("devices.id"), nullable=False, index=True)
     
-    # Raw sensor data from ESP32
+    # Raw sensor measurements
     tilt_x: Mapped[float] = mapped_column(Float, nullable=False)
     tilt_y: Mapped[float] = mapped_column(Float, nullable=False)
     tilt_z: Mapped[float] = mapped_column(Float, nullable=False)
     distance_cm: Mapped[float] = mapped_column(Float, nullable=False)
-    
-    # Calculated percentage changes from initial reading (NEW)
-    tilt_change_percent: Mapped[float | None] = mapped_column(Float, nullable=True)
-    distance_change_percent: Mapped[float | None] = mapped_column(Float, nullable=True)
-    
-    # Threshold breach flags (NEW)
-    tilt_threshold_breached: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-    distance_threshold_breached: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-    email_sent: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
@@ -36,4 +28,5 @@ class SensorReading(Base):
     )
     
     # Relationships
-    device = relationship("Device", back_populates="readings")
+    device: Mapped["Device"] = relationship("Device", back_populates="raw_readings")
+    processed_reading: Mapped["ProcessedSensorData"] = relationship("ProcessedSensorData", back_populates="raw_reading", uselist=False, cascade="all, delete-orphan")

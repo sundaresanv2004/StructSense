@@ -10,6 +10,7 @@ import {
   HelpCircle,
   Zap,
   Gauge,
+  Database,
 } from "lucide-react"
 import { NavMain } from "./nav-main"
 import { NavFooter } from "./nav-footer"
@@ -43,6 +44,11 @@ const data = {
       title: "Analytics",
       url: "/dashboard/analytics",
       icon: BarChart,
+    },
+    {
+      title: "Data",
+      url: "/dashboard/data",
+      icon: Database,
     },
     {
       title: "Settings",

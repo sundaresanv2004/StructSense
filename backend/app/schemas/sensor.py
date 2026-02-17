@@ -1,5 +1,6 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from datetime import datetime
+from typing import Optional
 
 class SensorIngestRequest(BaseModel):
     """
@@ -11,26 +12,27 @@ class SensorIngestRequest(BaseModel):
     tilt_z: float
     distance_cm: float
 
-class SensorReadingResponse(BaseModel):
+class ProcessedSensorDataResponse(BaseModel):
     """
-    Schema for sensor reading response with threshold monitoring.
+    Schema for processed sensor data response.
     """
     id: int
     device_id: int
-    tilt_x: float
-    tilt_y: float
-    tilt_z: float
-    distance_cm: float
+    raw_data_id: int
     
-    # Percentage changes from initial reading
-    tilt_change_percent: float | None
-    distance_change_percent: float | None
+    # Calculated differences
+    tilt_diff_x: float
+    tilt_diff_y: float
+    tilt_diff_z: float
+    distance_diff_cm: float
     
-    # Threshold breach flags
-    tilt_threshold_breached: bool
-    distance_threshold_breached: bool
+    # Combined metrics
+    tilt_change_percent: float
+    distance_change_percent: float
+    
+    # Status
+    status: str
     
     created_at: datetime
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

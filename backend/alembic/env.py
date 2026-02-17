@@ -17,7 +17,7 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 from app.core.db import Base
-from app.models import user, device, sensor_reading  # Import all models
+from app.models import user, device, raw_sensor_data, processed_sensor_data  # Import all models
 from app.core.config import settings
 
 target_metadata = Base.metadata
