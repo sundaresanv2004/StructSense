@@ -7,7 +7,16 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
     
     # CORS
-    BACKEND_CORS_ORIGINS: List[AnyHttpUrl] = []
+    BACKEND_CORS_ORIGINS: List[AnyHttpUrl] | str = []
+
+    @computed_field
+    @property
+    def cors_origins(self) -> List[str]:
+        """Parse CORS origins from environment variable."""
+        if isinstance(self.BACKEND_CORS_ORIGINS, str):
+            # Handle comma-separated string
+            return [origin.strip() for origin in self.BACKEND_CORS_ORIGINS.split(",") if origin.strip()]
+        return [str(origin) for origin in self.BACKEND_CORS_ORIGINS]
 
     # Database
     DATABASE_URL: str
