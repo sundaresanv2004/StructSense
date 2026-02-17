@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, EmailStr
 from app.models.access import UserDeviceAccessLevel
 
 class UserDeviceAccessBase(BaseModel):
@@ -14,3 +14,9 @@ class UserDeviceAccessUpdate(BaseModel):
 
 class UserDeviceAccessResponse(UserDeviceAccessBase):
     model_config = ConfigDict(from_attributes=True)
+
+class UserDeviceAssign(BaseModel):
+    """Schema for assigning a user to a device by email"""
+    user_email: EmailStr
+    access_level: UserDeviceAccessLevel = UserDeviceAccessLevel.VIEWER
+

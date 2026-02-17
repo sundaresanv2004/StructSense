@@ -1,42 +1,34 @@
-from datetime import datetime
-from enum import Enum
-from sqlalchemy import Column, Integer, Float, String, DateTime, ForeignKey, Enum as SQLAlchemyEnum
+from datetime import datetime, timezone
+from sqlalchemy import Float, DateTime, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.db import Base
-
-class TiltStatus(str, Enum):
-    SAFE = "SAFE"
-    WARNING = "WARNING"
-    RISK = "RISK"
-    DANGER = "DANGER"
-
-class SettlementStatus(str, Enum):
-    NORMAL = "NORMAL"
-    SHIFT = "SHIFT"
-    CRITICAL = "CRITICAL"
 
 class SensorReading(Base):
     __tablename__ = "sensor_readings"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    device_id: Mapped[int] = mapped_column(Integer, ForeignKey("devices.id"), nullable=False, index=True)
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    device_id: Mapped[int] = mapped_column(ForeignKey("devices.id"), nullable=False, index=True)
 
-    # Tilt data
-    tilt_x_deg: Mapped[float] = mapped_column(Float, nullable=False)
-    tilt_y_deg: Mapped[float] = mapped_column(Float, nullable=False)
-    tilt_z_deg: Mapped[float] = mapped_column(Float, nullable=True)
+    # Tilt data (accelerometer readings)
+    tilt_x: Mapped[float] = mapped_column(Float, nullable=False)
+    tilt_y: Mapped[float] = mapped_column(Float, nullable=False)
+    tilt_z: Mapped[float] = mapped_column(Float, nullable=False)
 
-    # Settlement data
+    # Ultrasonic distance measurement
     distance_cm: Mapped[float] = mapped_column(Float, nullable=False)
+
+    # Calculated settlement (baseline - distance)
     settlement_cm: Mapped[float] = mapped_column(Float, nullable=False)
 
-    # System evaluation
-    tilt_status: Mapped[TiltStatus] = mapped_column(SQLAlchemyEnum(TiltStatus), nullable=False, default=TiltStatus.SAFE)
-    settlement_status: Mapped[SettlementStatus] = mapped_column(SQLAlchemyEnum(SettlementStatus), nullable=False, default=SettlementStatus.NORMAL)
+    # Evaluated tilt status (SAFE, WARNING, RISK, DANGER)
+    tilt_status: Mapped[str] = mapped_column(nullable=False)
 
-    # Metadata
-    recorded_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    # Timestamp
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        index=True
+    )
 
     # Relationships
     device = relationship("Device", back_populates="readings")

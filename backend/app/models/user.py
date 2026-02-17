@@ -1,10 +1,6 @@
 from sqlalchemy import String, Boolean
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column
 from app.core.db import Base
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from .device import Device
 
 class User(Base):
     __tablename__ = "users"
@@ -16,6 +12,3 @@ class User(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     is_superuser: Mapped[bool] = mapped_column(Boolean, default=False)
 
-    devices: Mapped[list["Device"]] = relationship(
-        secondary="user_device_access", back_populates="users"
-    )

@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta, timezone
 from typing import Any, Union
+import secrets
 
 from jose import jwt
 from passlib.context import CryptContext
@@ -27,3 +28,16 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 
 def get_password_hash(password: str) -> str:
     return pwd_context.hash(password)
+
+def generate_api_key() -> str:
+    """Generate a secure random API key for device authentication"""
+    return secrets.token_urlsafe(32)
+
+def get_api_key_hash(api_key: str) -> str:
+    """Hash an API key for secure storage"""
+    return pwd_context.hash(api_key)
+
+def verify_api_key(plain_api_key: str, hashed_api_key: str) -> bool:
+    """Verify an API key against its hash"""
+    return pwd_context.verify(plain_api_key, hashed_api_key)
+

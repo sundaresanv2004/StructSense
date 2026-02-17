@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Device Management - StructSense</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            margin-bottom: 30px;
+        }
+
+        h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            color: #555;
+            margin-bottom: 5px;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+
+        input,
+        select {
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: all 0.3s ease;
+        }
+
+        input:focus,
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .required {
+            color: #e74c3c;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 14px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .message {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        thead {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        th,
+        td {
+            padding: 15px;
+            text-align: left;
+        }
+
+        th {
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.85em;
+            letter-spacing: 0.5px;
+        }
+
+        tbody tr {
+            border-bottom: 1px solid #f0f0f0;
+            transition: background-color 0.2s ease;
+        }
+
+        tbody tr:hover {
+            background-color: #f8f9ff;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .status.online {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status.offline {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+
+        .empty-state svg {
+            width: 120px;
+            height: 120px;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+
+        @media (max-width: 768px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            table {
+                font-size: 0.9em;
+            }
+
+            th,
+            td {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>📡 Device Management</h1>
+
+        <div class="card">
+            <h2>Register New Device</h2>
+
+            {% if message %}
+            <div class="message {{ message_class }}">
+                {{ message }}
+            </div>
+            {% endif %}
+
+            <form method="POST" action="/api/v1/devices/register">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="device_uid">Device UID <span class="required">*</span></label>
+                        <input type="text" id="device_uid" name="device_uid" required placeholder="e.g., esp32_001">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="name">Device Name <span class="required">*</span></label>
+                        <input type="text" id="name" name="name" required placeholder="e.g., Foundation Sensor A">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="type">Device Type <span class="required">*</span></label>
+                        <select id="type" name="type" required>
+                            <option value="">Select type...</option>
+                            <option value="foundation_sensor">Foundation Sensor</option>
+                            <option value="tilt_sensor">Tilt Sensor</option>
+                            <option value="settlement_sensor">Settlement Sensor</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="building_name">Building Name</label>
+                        <input type="text" id="building_name" name="building_name" placeholder="e.g., Block A">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="location_description">Location Description</label>
+                        <input type="text" id="location_description" name="location_description"
+                            placeholder="e.g., Basement pillar">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="baseline_distance_cm">Baseline Distance (cm) <span class="required">*</span></label>
+                        <input type="number" id="baseline_distance_cm" name="baseline_distance_cm" step="0.01" required
+                            placeholder="e.g., 210.5">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="assign_user_id">Assign to User (optional)</label>
+                        <select id="assign_user_id" name="assign_user_id">
+                            <option value="">-- No user assignment --</option>
+                            {% for user in users %}
+                            <option value="{{ user.id }}">{{ user.email }}{% if user.full_name %} ({{ user.full_name
+                                }}){% endif %}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="access_level">Access Level</label>
+                        <select id="access_level" name="access_level">
+                            <option value="viewer">Viewer</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button type="submit">📝 Register Device</button>
+            </form>
+        </div>
+
+        <div class="card">
+            <h2>Registered Devices</h2>
+
+            {% if devices %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Device UID</th>
+                        <th>Name</th>
+                        <th>Type</th>
+                        <th>Building</th>
+                        <th>Location</th>
+                        <th>Baseline (cm)</th>
+                        <th>Status</th>
+                        <th>Last Seen</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for device in devices %}
+                    <tr>
+                        <td><strong>{{ device.device_uid }}</strong></td>
+                        <td>{{ device.name }}</td>
+                        <td>{{ device.type }}</td>
+                        <td>{{ device.building_name or '—' }}</td>
+                        <td>{{ device.location_description or '—' }}</td>
+                        <td>{{ "%.2f"|format(device.baseline_distance_cm) }}</td>
+                        <td>
+                            {% if device.connection_status %}
+                            <span class="status online">● Online</span>
+                            {% else %}
+                            <span class="status offline">○ Offline</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if device.last_seen_at %}
+                            {{ device.last_seen_at.strftime('%Y-%m-%d %H:%M') }}
+                            {% else %}
+                            Never
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty-state">
+                <p style="font-size: 1.2em;">No devices registered yet.</p>
+                <p style="margin-top: 10px;">Use the form above to register your first ESP32 device.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</body>
+
+</html>
