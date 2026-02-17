@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
+import { PageHeader } from "@/components/dashboard/page-header"
 
 interface Device {
     id: number
@@ -207,16 +208,16 @@ export default function DevicesPage() {
     return (
         <div className="flex flex-col gap-6 p-6">
             {/* Header */}
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Devices</h1>
-                    <p className="text-muted-foreground">Manage your registered ESP32 devices</p>
-                </div>
+            <PageHeader
+                title="Devices"
+                description="Manage your registered ESP32 devices"
+                icon={Gauge}
+            >
                 <Button onClick={() => setShowAddDeviceDialog(true)}>
-                    <Plus className="h-4 w-4" />
+                    <Plus className="h-4 w-4 mr-2" />
                     Add New Device
                 </Button>
-            </div>
+            </PageHeader>
 
             {/* Stats */}
             <div className="grid gap-4 md:grid-cols-3">

@@ -46,7 +46,9 @@ async def register_device_form(
     building_name: str = Form(None),
     location_description: str = Form(None),
     tilt_threshold_percent: float = Form(50.0),
-    distance_threshold_percent: float = Form(50.0),
+    tilt_alert_threshold_percent: float = Form(70.0),
+    distance_threshold_percent: float = Form(5.0),
+    distance_alert_threshold_percent: float = Form(10.0),
     notification_email: Optional[str] = Form(None),
     assign_user_id: Optional[int] = Form(None),
     access_level: Optional[str] = Form("viewer"),
@@ -57,7 +59,6 @@ async def register_device_form(
     """
     try:
         # Create device
-        # Map single threshold to warning/alert (simple heuristic: warning=threshold, alert=threshold+20%)
         device_data = DeviceRegister(
             device_uid=device_uid,
             name=name,
@@ -65,9 +66,9 @@ async def register_device_form(
             building_name=building_name,
             location_description=location_description,
             tilt_warning_threshold=tilt_threshold_percent,
-            tilt_alert_threshold=tilt_threshold_percent + 20.0,
+            tilt_alert_threshold=tilt_alert_threshold_percent,
             distance_warning_threshold=distance_threshold_percent,
-            distance_alert_threshold=distance_threshold_percent + 20.0,
+            distance_alert_threshold=distance_alert_threshold_percent,
             notification_email=notification_email if notification_email else None
         )
         

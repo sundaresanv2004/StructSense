@@ -2,6 +2,7 @@
 
 import type * as React from "react"
 import {
+  Home,
   LayoutDashboard,
   BarChart,
   HelpCircle,
@@ -29,7 +30,7 @@ const data = {
     {
       title: "Dashboard",
       url: "/dashboard",
-      icon: LayoutDashboard,
+      icon: Home,
       isActive: true,
     },
     {

@@ -113,7 +113,11 @@ class SensorService:
         tilt_diff_x = raw_reading.tilt_x - base_tilt_x
         tilt_diff_y = raw_reading.tilt_y - base_tilt_y
         tilt_diff_z = raw_reading.tilt_z - base_tilt_z
-        distance_diff_mm = raw_reading.distance_mm - base_distance
+        
+        # For Distance: Sink detection (Baseline - Current)
+        # We only care if distance DECREASES (Structure sinks towards reference)
+        # If distance INCREASES (Current > Baseline), it's a rise (or noise), which we ignore for alerts.
+        distance_diff_mm = base_distance - raw_reading.distance_mm
         
         # Calculate percentage change for each axis individually
         # If baseline is 0, any deviation is considered 100% change
@@ -129,10 +133,18 @@ class SensorService:
         # Use the MAXIMUM change among all axes to trigger alerts if ANY axis goes wide
         tilt_change_percent = max(pct_x, pct_y, pct_z)
             
+        # Calculate Distance Percentage (Sink %)
         if base_distance == 0:
-            distance_change_percent = 100.0 if raw_reading.distance_mm != 0 else 0.0
+            if raw_reading.distance_mm < 0: # Should not happen usually
+                 distance_change_percent = 100.0
+            else:
+                 distance_change_percent = 0.0
         else:
-            distance_change_percent = abs(((raw_reading.distance_mm - base_distance) / base_distance) * 100)
+            if distance_diff_mm > 0: # Sink detected
+                distance_change_percent = (distance_diff_mm / base_distance) * 100.0
+            else:
+                # Rise or no change (ignored)
+                distance_change_percent = 0.0
             
         status = SensorService.determine_status(device, tilt_change_percent, distance_change_percent)
         

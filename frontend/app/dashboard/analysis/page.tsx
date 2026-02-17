@@ -18,6 +18,7 @@ import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { AxisChart, AxisDataPoint } from "@/components/dashboard/axis-chart"
 import { DistanceChart, DistanceDataPoint } from "@/components/dashboard/distance-chart"
+import { PageHeader } from "@/components/dashboard/page-header"
 
 interface Device {
     id: number
@@ -137,12 +138,11 @@ export default function AnalysisPage() {
 
     return (
         <div className="flex flex-col gap-6 p-6">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Sensor Analysis</h1>
-                    <p className="text-muted-foreground">Deep dive into sensor metrics</p>
-                </div>
-
+            <PageHeader
+                title="Sensor Analysis"
+                description="Deep dive into sensor metrics"
+                icon={Activity}
+            >
                 <div className="flex items-center gap-4">
                     <div className="flex items-center space-x-2 bg-card p-2 rounded-lg border shadow-sm">
                         <Switch
@@ -177,7 +177,7 @@ export default function AnalysisPage() {
                         <RefreshCw className="h-4 w-4" />
                     </Button>
                 </div>
-            </div>
+            </PageHeader>
 
             {/* TILT AXIS CHART */}
             <Card>

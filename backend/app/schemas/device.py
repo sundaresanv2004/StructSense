@@ -16,8 +16,8 @@ class DeviceRegister(DeviceBase):
     tilt_warning_threshold: float = 30.0
     tilt_alert_threshold: float = 50.0
     
-    distance_warning_threshold: float = 300.0
-    distance_alert_threshold: float = 500.0
+    distance_warning_threshold: float = 5.0
+    distance_alert_threshold: float = 10.0
     
     # Email for notifications
     notification_email: str | None = None

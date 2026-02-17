@@ -19,6 +19,7 @@ import { DateRange } from "react-day-picker"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Button } from "@/components/ui/button"
+import { PageHeader } from "@/components/dashboard/page-header"
 // SensorChart removed as per request
 
 
@@ -291,12 +292,11 @@ export default function DataPage() {
 
     return (
         <div className="flex flex-col gap-6 p-6">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Sensor Data</h1>
-                    <p className="text-muted-foreground">Detailed view with advanced filtering</p>
-                </div>
-
+            <PageHeader
+                title="Sensor Data"
+                description="Detailed view with advanced filtering"
+                icon={Database}
+            >
                 <div className="flex items-center gap-4">
                     <div className="flex items-center space-x-2 bg-card p-2 rounded-lg border shadow-sm">
                         <Switch
@@ -325,7 +325,7 @@ export default function DataPage() {
                         </Select>
                     </div>
                 </div>
-            </div>
+            </PageHeader>
 
             {/* CHART SECTION */}
             {/* CHART SECTION REMOVED */}
