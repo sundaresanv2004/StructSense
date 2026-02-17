@@ -20,6 +20,7 @@ async def post_signup(
     request: Request,
     email: str = Form(...),
     password: str = Form(...),
+    full_name: str = Form(None),
     db: AsyncSession = Depends(get_db)
 ):
     result = await db.execute(select(User).where(User.email == email))
@@ -33,7 +34,7 @@ async def post_signup(
         })
     
     hashed_password = get_password_hash(password)
-    new_user = User(email=email, hashed_password=hashed_password)
+    new_user = User(email=email, hashed_password=hashed_password, full_name=full_name)
     db.add(new_user)
     await db.commit()
     

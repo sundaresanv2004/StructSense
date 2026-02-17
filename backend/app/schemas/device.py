@@ -2,6 +2,7 @@ from pydantic import BaseModel, ConfigDict
 from typing import Optional
 
 class DeviceBase(BaseModel):
+    device_uid: str
     name: str
     type: str
     location: Optional[str] = None
@@ -11,6 +12,7 @@ class DeviceCreate(DeviceBase):
     pass
 
 class DeviceUpdate(DeviceBase):
+    device_uid: Optional[str] = None
     name: Optional[str] = None
     type: Optional[str] = None
     location: Optional[str] = None
