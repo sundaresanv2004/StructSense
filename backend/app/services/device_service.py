@@ -159,3 +159,38 @@ class DeviceService:
         device.connection_status = status
         device.last_seen_at = datetime.now(timezone.utc)
         await db.commit()
+
+    @staticmethod
+    async def delete_device(db: AsyncSession, device_id: int) -> bool:
+        """
+        Delete a device and all associated data.
+        """
+        device = await DeviceService.get_device_by_id(db, device_id)
+        if not device:
+            return False
+            
+        await db.delete(device)
+        await db.commit()
+        return True
+
+    @staticmethod
+    async def reset_device_data(db: AsyncSession, device_id: int) -> bool:
+        """
+        Delete all sensor data (Raw and Processed) for a device.
+        """
+        from app.models.raw_sensor_data import RawSensorData
+        from app.models.processed_sensor_data import ProcessedSensorData
+        from sqlalchemy import delete
+        
+        device = await DeviceService.get_device_by_id(db, device_id)
+        if not device:
+            return False
+            
+        # Delete processed data first (FK constraint)
+        await db.execute(delete(ProcessedSensorData).where(ProcessedSensorData.device_id == device_id))
+        
+        # Delete raw data
+        await db.execute(delete(RawSensorData).where(RawSensorData.device_id == device_id))
+        
+        await db.commit()
+        return True

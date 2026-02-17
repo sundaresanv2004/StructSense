@@ -18,7 +18,8 @@ class RawSensorData(Base):
     tilt_x: Mapped[float] = mapped_column(Float, nullable=False)
     tilt_y: Mapped[float] = mapped_column(Float, nullable=False)
     tilt_z: Mapped[float] = mapped_column(Float, nullable=False)
-    distance_cm: Mapped[float] = mapped_column(Float, nullable=False)
+    # Ultrasonic Distance (in millimeters)
+    distance_mm: Mapped[float] = mapped_column(Float, nullable=False)
     
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),

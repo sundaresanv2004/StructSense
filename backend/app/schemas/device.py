@@ -16,8 +16,8 @@ class DeviceRegister(DeviceBase):
     tilt_warning_threshold: float = 30.0
     tilt_alert_threshold: float = 50.0
     
-    distance_warning_threshold: float = 30.0
-    distance_alert_threshold: float = 50.0
+    distance_warning_threshold: float = 300.0
+    distance_alert_threshold: float = 500.0
     
     # Email for notifications
     notification_email: str | None = None
@@ -71,6 +71,6 @@ class DeviceResponse(DeviceBase):
             
         now = datetime.now(timezone.utc)
         diff = now - last_seen
-        return diff < timedelta(minutes=5)
+        return diff < timedelta(seconds=30)
     
     model_config = ConfigDict(from_attributes=True)

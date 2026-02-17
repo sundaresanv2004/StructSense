@@ -90,3 +90,38 @@ async def update_device(
     """
     device = await DeviceService.update_device(db, device_id, device_data)
     return device
+
+
+@router.delete("/{device_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_device(
+    device_id: int,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Delete a device and all its data.
+    """
+    success = await DeviceService.delete_device(db, device_id)
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Device with ID {device_id} not found"
+        )
+    return None
+
+
+@router.post("/{device_id}/reset", status_code=status.HTTP_200_OK)
+async def reset_device_data(
+    device_id: int,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Reset all sensor data for a device (Raw and Processed).
+    Keeps the device registration.
+    """
+    success = await DeviceService.reset_device_data(db, device_id)
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Device with ID {device_id} not found"
+        )
+    return {"message": "Device data reset successfully"}

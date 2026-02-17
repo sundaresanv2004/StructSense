@@ -3,16 +3,14 @@
 import type * as React from "react"
 import {
   LayoutDashboard,
-  Cpu,
-  Users,
   BarChart,
-  Settings,
   HelpCircle,
   Zap,
   Gauge,
   Database,
 } from "lucide-react"
 import { NavMain } from "./nav-main"
+import { NavSupport } from "./nav-support"
 import { NavFooter } from "./nav-footer"
 import {
   Sidebar,
@@ -41,19 +39,14 @@ const data = {
       isActive: false,
     },
     {
-      title: "Analytics",
-      url: "/dashboard/analytics",
+      title: "Analysis",
+      url: "/dashboard/analysis",
       icon: BarChart,
     },
     {
       title: "Data",
       url: "/dashboard/data",
       icon: Database,
-    },
-    {
-      title: "Settings",
-      url: "/dashboard/settings",
-      icon: Settings,
     },
   ],
   navSupport: [
@@ -90,7 +83,7 @@ const AppSidebar: React.FC<React.ComponentProps<typeof Sidebar>> = ({ ...props }
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} groupTitle="Management" currentPath={pathname} />
-        <NavMain items={data.navSupport} groupTitle="Support" currentPath={pathname} />
+        <NavSupport items={data.navSupport} groupTitle="Support" currentPath={pathname} />
       </SidebarContent>
       <SidebarFooter>
         <NavFooter />
@@ -101,4 +94,3 @@ const AppSidebar: React.FC<React.ComponentProps<typeof Sidebar>> = ({ ...props }
 }
 
 export default AppSidebar
-

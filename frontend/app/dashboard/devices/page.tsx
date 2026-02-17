@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Plus, Wifi, WifiOff, MapPin, Building, Gauge, Pencil } from "lucide-react"
+import { Plus, Wifi, WifiOff, MapPin, Building, Gauge, Pencil, Trash2, RotateCcw } from "lucide-react"
 import {
     Dialog,
     DialogContent,
@@ -14,6 +14,16 @@ import {
     DialogTitle,
     DialogFooter,
 } from "@/components/ui/dialog"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
 
@@ -48,10 +58,14 @@ export default function DevicesPage() {
         location_description: "",
         tilt_warning_threshold: 30,
         tilt_alert_threshold: 45,
-        distance_warning_threshold: 10,
-        distance_alert_threshold: 20,
+        distance_warning_threshold: 300,
+        distance_alert_threshold: 500,
         notification_email: ""
     })
+
+    // Action dialog states
+    const [deviceToDelete, setDeviceToDelete] = useState<Device | null>(null)
+    const [deviceToReset, setDeviceToReset] = useState<Device | null>(null)
 
     useEffect(() => {
         fetchDevices()
@@ -121,6 +135,55 @@ export default function DevicesPage() {
         } catch (error) {
             console.error("Failed to update device:", error)
             toast.error("Failed to update device")
+        }
+    }
+
+    const handleDelete = async () => {
+        if (!deviceToDelete) return
+
+        try {
+            const response = await fetch(
+                `${process.env.NEXT_PUBLIC_API_URL}/api/v1/devices/${deviceToDelete.id}`,
+                {
+                    method: "DELETE",
+                }
+            )
+
+            if (response.ok) {
+                toast.success("Device deleted successfully")
+                setDeviceToDelete(null)
+                fetchDevices()
+            } else {
+                toast.error("Failed to delete device")
+            }
+        } catch (error) {
+            console.error("Failed to delete device:", error)
+            toast.error("Failed to delete device")
+        }
+    }
+
+    const handleReset = async () => {
+        if (!deviceToReset) return
+
+        try {
+            const response = await fetch(
+                `${process.env.NEXT_PUBLIC_API_URL}/api/v1/devices/${deviceToReset.id}/reset`,
+                {
+                    method: "POST",
+                }
+            )
+
+            if (response.ok) {
+                toast.success("Device data reset successfully")
+                setDeviceToReset(null)
+                // Optionally refresh devices if stats are shown
+                fetchDevices()
+            } else {
+                toast.error("Failed to reset device data")
+            }
+        } catch (error) {
+            console.error("Failed to reset device data:", error)
+            toast.error("Failed to reset device data")
         }
     }
 
@@ -262,10 +325,10 @@ export default function DevicesPage() {
                                         </div>
                                     </div>
                                     <div className="space-y-1">
-                                        <span className="text-muted-foreground block">Distance Thresholds</span>
+                                        <span className="text-muted-foreground block">Distance (mm)</span>
                                         <div className="flex gap-2">
-                                            <span className="text-orange-500 font-medium">warn: {device.distance_warning_threshold}%</span>
-                                            <span className="text-red-500 font-medium">alert: {device.distance_alert_threshold}%</span>
+                                            <span className="text-orange-500 font-medium">warn: {device.distance_warning_threshold}</span>
+                                            <span className="text-red-500 font-medium">alert: {device.distance_alert_threshold}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -274,13 +337,32 @@ export default function DevicesPage() {
                                     <p className="text-xs text-muted-foreground">
                                         Last seen: {formatDate(device.last_seen_at)}
                                     </p>
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() => handleEdit(device)}
-                                    >
-                                        <Pencil className="h-4 w-4" />
-                                    </Button>
+                                    <div className="flex gap-1">
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={() => setDeviceToReset(device)}
+                                            title="Reset Data"
+                                        >
+                                            <RotateCcw className="h-4 w-4 text-orange-500" />
+                                        </Button>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={() => handleEdit(device)}
+                                            title="Edit Device"
+                                        >
+                                            <Pencil className="h-4 w-4" />
+                                        </Button>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={() => setDeviceToDelete(device)}
+                                            title="Delete Device"
+                                        >
+                                            <Trash2 className="h-4 w-4 text-destructive" />
+                                        </Button>
+                                    </div>
                                 </div>
                             </CardContent>
                         </Card>
@@ -360,21 +442,21 @@ export default function DevicesPage() {
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="dist_warning">Distance Warning (%)</Label>
+                                    <Label htmlFor="dist_warning">Dist Warn (mm)</Label>
                                     <Input
                                         id="dist_warning"
                                         type="number"
-                                        step="0.1"
+                                        step="10"
                                         value={formData.distance_warning_threshold}
                                         onChange={(e) => setFormData({ ...formData, distance_warning_threshold: parseFloat(e.target.value) })}
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="dist_alert">Distance Alert (%)</Label>
+                                    <Label htmlFor="dist_alert">Dist Alert (mm)</Label>
                                     <Input
                                         id="dist_alert"
                                         type="number"
-                                        step="0.1"
+                                        step="10"
                                         value={formData.distance_alert_threshold}
                                         onChange={(e) => setFormData({ ...formData, distance_alert_threshold: parseFloat(e.target.value) })}
                                     />
@@ -428,6 +510,86 @@ export default function DevicesPage() {
                     <DialogFooter>
                         <Button onClick={() => setShowAddDeviceDialog(false)}>
                             Close
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Delete Confirmation Dialog */}
+            <Dialog open={!!deviceToDelete} onOpenChange={(open) => !open && setDeviceToDelete(null)}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Delete Device</DialogTitle>
+                        <DialogDescription>
+                            This action cannot be undone. This will permanently delete the device
+                            <span className="font-semibold text-foreground"> {deviceToDelete?.name} </span>
+                            and all of its sensor data.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="py-4 space-y-4">
+                        <Label htmlFor="confirm-delete">
+                            Please type <span className="font-mono font-bold">delete</span> to confirm.
+                        </Label>
+                        <Input
+                            id="confirm-delete"
+                            placeholder="Type 'delete' to confirm"
+                            onChange={(e) => {
+                                const btn = document.getElementById('btn-delete-confirm') as HTMLButtonElement
+                                if (btn) btn.disabled = e.target.value !== 'delete'
+                            }}
+                        />
+                    </div>
+
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setDeviceToDelete(null)}>Cancel</Button>
+                        <Button
+                            id="btn-delete-confirm"
+                            variant="destructive"
+                            disabled
+                            onClick={handleDelete}
+                        >
+                            Delete Device
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Reset Confirmation Dialog */}
+            <Dialog open={!!deviceToReset} onOpenChange={(open) => !open && setDeviceToReset(null)}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Reset Device Data</DialogTitle>
+                        <DialogDescription>
+                            This will delete ALL historical sensor readings for
+                            <span className="font-semibold text-foreground"> {deviceToReset?.name} </span>.
+                            The device itself will REMAIN registered.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="py-4 space-y-4">
+                        <Label htmlFor="confirm-reset">
+                            Please type <span className="font-mono font-bold">reset</span> to confirm.
+                        </Label>
+                        <Input
+                            id="confirm-reset"
+                            placeholder="Type 'reset' to confirm"
+                            onChange={(e) => {
+                                const btn = document.getElementById('btn-reset-confirm') as HTMLButtonElement
+                                if (btn) btn.disabled = e.target.value !== 'reset'
+                            }}
+                        />
+                    </div>
+
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setDeviceToReset(null)}>Cancel</Button>
+                        <Button
+                            id="btn-reset-confirm"
+                            className="bg-orange-500 hover:bg-orange-600"
+                            disabled
+                            onClick={handleReset}
+                        >
+                            Reset Data
                         </Button>
                     </DialogFooter>
                 </DialogContent>

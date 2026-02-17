@@ -19,11 +19,18 @@ import { DateRange } from "react-day-picker"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Button } from "@/components/ui/button"
+// SensorChart removed as per request
+
+
 
 interface Device {
     id: number
     name: string
     device_uid: string
+    tilt_warning_threshold: number
+    tilt_alert_threshold: number
+    distance_warning_threshold: number
+    distance_alert_threshold: number
 }
 
 interface ProcessedData {
@@ -35,14 +42,16 @@ interface ProcessedData {
     tilt_diff_x: number
     tilt_diff_y: number
     tilt_diff_z: number
-    distance_diff_cm: number
+    distance_diff_mm: number
     raw_data_id: number
 }
 
 export default function DataPage() {
     const [devices, setDevices] = useState<Device[]>([])
     const [selectedDeviceId, setSelectedDeviceId] = useState<string>("")
+    const [selectedDevice, setSelectedDevice] = useState<Device | null>(null)
     const [data, setData] = useState<ProcessedData[]>([])
+    // const [chartData, setChartData] = useState<SensorDataPoint[]>([]) // Removed
     const [loading, setLoading] = useState(false)
     const [loadingDevices, setLoadingDevices] = useState(true)
 
@@ -62,12 +71,21 @@ export default function DataPage() {
         fetchDevices()
     }, [])
 
+    // Update selected device object when ID changes
+    useEffect(() => {
+        if (selectedDeviceId && devices.length > 0) {
+            const device = devices.find(d => d.id.toString() === selectedDeviceId) || null
+            setSelectedDevice(device)
+        }
+    }, [selectedDeviceId, devices])
+
     // Fetch data when dependencies change
     useEffect(() => {
         if (selectedDeviceId) {
             fetchData(parseInt(selectedDeviceId))
         } else {
             setData([])
+            // setChartData([]) // Removed
         }
     }, [selectedDeviceId, dateRange, statusFilter])
 
@@ -117,7 +135,6 @@ export default function DataPage() {
                 let result: ProcessedData[] = await response.json()
 
                 // Client-side filtering (API currently supports basic retrieval)
-                // In a production app, move these filters to the API
 
                 // Filter by Status
                 if (statusFilter !== "ALL") {
@@ -136,6 +153,10 @@ export default function DataPage() {
                 }
 
                 setData(result)
+
+                // Prepare Chart Data (Removed)
+                // const chartData = [...result].reverse().map(item => ({ ... }))
+                // setChartData(chartData)
             }
         } catch (error) {
             console.error("Failed to fetch data:", error)
@@ -206,7 +227,16 @@ export default function DataPage() {
             },
             cell: ({ row }) => {
                 const val = parseFloat(row.getValue("tilt_change_percent"))
-                return <div className={`font-medium ${val > 0 ? "text-orange-600" : ""}`}>{val.toFixed(2)}%</div>
+                const isWarning = selectedDevice && val >= selectedDevice.tilt_warning_threshold
+
+                return (
+                    <div className="flex items-center gap-2">
+                        <span className={`font-medium ${val > 0 ? "text-orange-600" : ""}`}>{val.toFixed(2)}%</span>
+                        {isWarning && (
+                            <AlertTriangle className="w-4 h-4 text-orange-500" />
+                        )}
+                    </div>
+                )
             },
         },
         {
@@ -225,7 +255,16 @@ export default function DataPage() {
             },
             cell: ({ row }) => {
                 const val = parseFloat(row.getValue("distance_change_percent"))
-                return <div className={`font-medium ${val > 0 ? "text-blue-600" : ""}`}>{val.toFixed(2)}%</div>
+                const isWarning = selectedDevice && val >= selectedDevice.distance_warning_threshold
+
+                return (
+                    <div className="flex items-center gap-2">
+                        <span className={`font-medium ${val > 0 ? "text-blue-600" : ""}`}>{val.toFixed(2)}%</span>
+                        {isWarning && (
+                            <AlertTriangle className="w-4 h-4 text-blue-500" />
+                        )}
+                    </div>
+                )
             },
         },
         {
@@ -244,9 +283,9 @@ export default function DataPage() {
             cell: ({ row }) => <div className="font-mono text-xs text-muted-foreground">{parseFloat(row.getValue("tilt_diff_z")).toFixed(2)}</div>,
         },
         {
-            accessorKey: "distance_diff_cm",
+            accessorKey: "distance_diff_mm",
             header: "Dist Diff",
-            cell: ({ row }) => <div className="font-mono text-xs text-muted-foreground">{parseFloat(row.getValue("distance_diff_cm")).toFixed(2)} cm</div>,
+            cell: ({ row }) => <div className="font-mono text-xs text-muted-foreground">{parseFloat(row.getValue("distance_diff_mm")).toFixed(2)} mm</div>,
         },
     ]
 
@@ -288,6 +327,10 @@ export default function DataPage() {
                 </div>
             </div>
 
+            {/* CHART SECTION */}
+            {/* CHART SECTION REMOVED */}
+
+            {/* DATA TABLE SECTION */}
             <Card>
                 <CardHeader className="pb-3">
                     <div className="flex flex-col md:flex-row gap-4 justify-between">
@@ -323,7 +366,7 @@ export default function DataPage() {
                     </div>
                 </CardHeader>
                 <CardContent>
-                    {loading ? (
+                    {loading && data.length === 0 ? (
                         <div className="flex justify-center py-12">
                             <Loader2 className="w-8 h-8 animate-spin text-primary" />
                         </div>

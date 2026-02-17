@@ -15,11 +15,11 @@ class ProcessedSensorData(Base):
     device_id: Mapped[int] = mapped_column(ForeignKey("devices.id"), nullable=False, index=True)
     raw_data_id: Mapped[int] = mapped_column(ForeignKey("raw_sensor_data.id"), nullable=False, unique=True)
     
-    # Calculated differences from baseline
+    # Absolute differences from baseline
     tilt_diff_x: Mapped[float] = mapped_column(Float, nullable=False)
     tilt_diff_y: Mapped[float] = mapped_column(Float, nullable=False)
     tilt_diff_z: Mapped[float] = mapped_column(Float, nullable=False)
-    distance_diff_cm: Mapped[float] = mapped_column(Float, nullable=False)
+    distance_diff_mm: Mapped[float] = mapped_column(Float, nullable=False)
     
     # Combined metrics for threshold checking
     tilt_change_percent: Mapped[float] = mapped_column(Float, nullable=False)

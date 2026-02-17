@@ -22,8 +22,8 @@ class Device(Base):
     tilt_warning_threshold: Mapped[float] = mapped_column(Float, default=30.0, nullable=False)
     tilt_alert_threshold: Mapped[float] = mapped_column(Float, default=50.0, nullable=False)
     
-    distance_warning_threshold: Mapped[float] = mapped_column(Float, default=30.0, nullable=False)
-    distance_alert_threshold: Mapped[float] = mapped_column(Float, default=50.0, nullable=False)
+    distance_warning_threshold: Mapped[float] = mapped_column(Float, default=300.0, nullable=False)
+    distance_alert_threshold: Mapped[float] = mapped_column(Float, default=500.0, nullable=False)
     
     # Email for notifications
     notification_email: Mapped[str | None] = mapped_column(String, nullable=True)
