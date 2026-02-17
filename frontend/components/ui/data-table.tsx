@@ -30,6 +30,13 @@ import {
     DropdownMenuContent,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
 import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react"
 
 interface DataTableProps<TData, TValue> {
@@ -104,7 +111,7 @@ export function DataTable<TData, TValue>({
                     </DropdownMenuContent>
                 </DropdownMenu>
             </div>
-            <div className="rounded-md border">
+            <div className="rounded-md border overflow-x-auto">
                 <Table>
                     <TableHeader>
                         {table.getHeaderGroups().map((headerGroup) => (
@@ -154,25 +161,53 @@ export function DataTable<TData, TValue>({
                     </TableBody>
                 </Table>
             </div>
-            <div className="flex items-center justify-end space-x-2 py-4">
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => table.previousPage()}
-                    disabled={!table.getCanPreviousPage()}
-                >
-                    <ChevronLeft className="h-4 w-4 mr-2" />
-                    Previous
-                </Button>
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => table.nextPage()}
-                    disabled={!table.getCanNextPage()}
-                >
-                    Next
-                    <ChevronRight className="h-4 w-4 ml-2" />
-                </Button>
+            <div className="flex items-center justify-between py-4">
+                <div className="flex-1 text-sm text-muted-foreground">
+                    Page {table.getState().pagination.pageIndex + 1} of{" "}
+                    {table.getPageCount()}
+                </div>
+                <div className="flex items-center space-x-6 lg:space-x-8">
+                    <div className="flex items-center space-x-2">
+                        <p className="text-sm font-medium">Rows per page</p>
+                        <Select
+                            value={`${table.getState().pagination.pageSize}`}
+                            onValueChange={(value) => {
+                                table.setPageSize(Number(value))
+                            }}
+                        >
+                            <SelectTrigger className="h-8 w-[70px]">
+                                <SelectValue placeholder={table.getState().pagination.pageSize} />
+                            </SelectTrigger>
+                            <SelectContent side="top">
+                                {[10, 25, 50, 100].map((pageSize) => (
+                                    <SelectItem key={pageSize} value={`${pageSize}`}>
+                                        {pageSize}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => table.previousPage()}
+                            disabled={!table.getCanPreviousPage()}
+                        >
+                            <ChevronLeft className="h-4 w-4 mr-2" />
+                            Previous
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => table.nextPage()}
+                            disabled={!table.getCanNextPage()}
+                        >
+                            Next
+                            <ChevronRight className="h-4 w-4 ml-2" />
+                        </Button>
+                    </div>
+                </div>
             </div>
         </div>
     )

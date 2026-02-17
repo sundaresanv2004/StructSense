@@ -21,15 +21,18 @@ import {
 
 const BreadcrumbNav: React.FC = () => {
     const pathname = usePathname()
-    const pathSegments = pathname.split('/').filter(segment => segment !== '' && segment !== 'admin')
+    // Filter out 'dashboard' as it's represented by the Home icon
+    const pathSegments = pathname.split('/').filter(segment => segment !== '' && segment !== 'admin' && segment !== 'dashboard')
+
+    const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 
     const renderBreadcrumbItem = (segment: string, index: number, isLast: boolean, href: string) => (
         <BreadcrumbItem key={segment}>
             {isLast ? (
-                <BreadcrumbPage>{segment}</BreadcrumbPage>
+                <BreadcrumbPage>{capitalize(segment)}</BreadcrumbPage>
             ) : (
                 <BreadcrumbLink asChild>
-                    <Link href={href}>{segment}</Link>
+                    <Link href={href}>{capitalize(segment)}</Link>
                 </BreadcrumbLink>
             )}
         </BreadcrumbItem>
@@ -78,7 +81,7 @@ const BreadcrumbNav: React.FC = () => {
                                             return (
                                                 <DropdownMenuItem key={segment} asChild>
                                                     <Link href={href} className="w-full">
-                                                        {segment}
+                                                        {capitalize(segment)}
                                                     </Link>
                                                 </DropdownMenuItem>
                                             )

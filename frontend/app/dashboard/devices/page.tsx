@@ -67,6 +67,7 @@ export default function DevicesPage() {
     // Action dialog states
     const [deviceToDelete, setDeviceToDelete] = useState<Device | null>(null)
     const [deviceToReset, setDeviceToReset] = useState<Device | null>(null)
+    const [resetConfirmationText, setResetConfirmationText] = useState("")
 
     useEffect(() => {
         fetchDevices()
@@ -177,6 +178,7 @@ export default function DevicesPage() {
             if (response.ok) {
                 toast.success("Device data reset successfully")
                 setDeviceToReset(null)
+                setResetConfirmationText("")
                 // Optionally refresh devices if stats are shown
                 fetchDevices()
             } else {
@@ -575,19 +577,20 @@ export default function DevicesPage() {
                         <Input
                             id="confirm-reset"
                             placeholder="Type 'reset' to confirm"
-                            onChange={(e) => {
-                                const btn = document.getElementById('btn-reset-confirm') as HTMLButtonElement
-                                if (btn) btn.disabled = e.target.value !== 'reset'
-                            }}
+                            value={resetConfirmationText}
+                            onChange={(e) => setResetConfirmationText(e.target.value)}
                         />
                     </div>
 
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setDeviceToReset(null)}>Cancel</Button>
+                        <Button variant="outline" onClick={() => {
+                            setDeviceToReset(null)
+                            setResetConfirmationText("")
+                        }}>Cancel</Button>
                         <Button
                             id="btn-reset-confirm"
                             className="bg-orange-500 hover:bg-orange-600"
-                            disabled
+                            disabled={resetConfirmationText !== 'reset'}
                             onClick={handleReset}
                         >
                             Reset Data

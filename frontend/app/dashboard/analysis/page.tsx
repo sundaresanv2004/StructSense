@@ -54,6 +54,11 @@ export default function AnalysisPage() {
     const [liveUpdate, setLiveUpdate] = useState(false)
     const intervalRef = useRef<NodeJS.Timeout | null>(null)
 
+    // Fetch devices on mount
+    useEffect(() => {
+        fetchDevices()
+    }, [])
+
     // Handle Live Update
     useEffect(() => {
         if (liveUpdate && selectedDeviceId) {
@@ -87,6 +92,18 @@ export default function AnalysisPage() {
             setLoadingDevices(false)
         }
     }
+
+
+
+    // Fetch data when device or date changes
+    useEffect(() => {
+        if (selectedDeviceId) {
+            fetchData(parseInt(selectedDeviceId))
+        } else {
+            setAxisData([])
+            setDistanceData([])
+        }
+    }, [selectedDeviceId, dateRange])
 
     const fetchData = async (deviceId: number, silent = false) => {
         if (!silent) setLoading(true)
@@ -170,38 +187,19 @@ export default function AnalysisPage() {
                             </SelectContent>
                         </Select>
                     </div>
-
-                    <DatePickerWithRange date={dateRange} setDate={setDateRange} />
-
-                    <Button variant="outline" size="icon" onClick={() => fetchData(parseInt(selectedDeviceId))}>
-                        <RefreshCw className="h-4 w-4" />
-                    </Button>
                 </div>
             </PageHeader>
 
-            {/* TILT AXIS CHART */}
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <Activity className="w-5 h-5 text-primary" />
-                        3-Axis Tilt Deviation
-                    </CardTitle>
-                    <CardDescription>
-                        Visualizing X, Y, and Z axis changes relative to baseline
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    {loading && axisData.length === 0 ? (
-                        <div className="flex justify-center py-12">
-                            <Loader2 className="w-8 h-8 animate-spin text-primary" />
-                        </div>
-                    ) : (
-                        <AxisChart data={axisData} />
-                    )}
-                </CardContent>
-            </Card>
+            {/* Toolbar for Filters */}
+            <div className="flex justify-end items-center gap-4">
+                <DatePickerWithRange date={dateRange} setDate={setDateRange} />
 
-            {/* DISTANCE CHART */}
+                <Button variant="outline" size="icon" onClick={() => fetchData(parseInt(selectedDeviceId))}>
+                    <RefreshCw className="h-4 w-4" />
+                </Button>
+            </div>
+
+            {/* DISTANCE CHART (Moved to Top) */}
             <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
@@ -219,6 +217,28 @@ export default function AnalysisPage() {
                         </div>
                     ) : (
                         <DistanceChart data={distanceData} />
+                    )}
+                </CardContent>
+            </Card>
+
+            {/* TILT AXIS CHART (Moved to Bottom) */}
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <Activity className="w-5 h-5 text-primary" />
+                        3-Axis Tilt Deviation
+                    </CardTitle>
+                    <CardDescription>
+                        Visualizing X, Y, and Z axis changes relative to baseline
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    {loading && axisData.length === 0 ? (
+                        <div className="flex justify-center py-12">
+                            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                        </div>
+                    ) : (
+                        <AxisChart data={axisData} />
                     )}
                 </CardContent>
             </Card>

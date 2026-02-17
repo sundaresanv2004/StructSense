@@ -58,6 +58,12 @@ export const NavFooter: React.FC = () => {
                         "Authorization": `Bearer ${token}`
                     }
                 })
+
+                if (response.status === 401) {
+                    handleLogout()
+                    return
+                }
+
                 if (response.ok) {
                     const data = await response.json()
                     setUser({

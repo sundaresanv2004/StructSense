@@ -115,9 +115,11 @@ class SensorService:
         tilt_diff_z = raw_reading.tilt_z - base_tilt_z
         
         # For Distance: Sink detection (Baseline - Current)
-        # We only care if distance DECREASES (Structure sinks towards reference)
-        # If distance INCREASES (Current > Baseline), it's a rise (or noise), which we ignore for alerts.
-        distance_diff_mm = base_distance - raw_reading.distance_mm
+        # SINK = Distance DECREASES (Structure moves closer to sensor) => Positive difference
+        # RISE = Distance INCREASES (Structure moves away) => Negative difference
+        # User Requirement: We only care about SINK. If it rises (negative), set to 0.
+        raw_diff = base_distance - raw_reading.distance_mm
+        distance_diff_mm = max(0.0, raw_diff)
         
         # Calculate percentage change for each axis individually
         # If baseline is 0, any deviation is considered 100% change
@@ -135,26 +137,20 @@ class SensorService:
             
         # Calculate Distance Percentage (Sink %)
         if base_distance == 0:
-            if raw_reading.distance_mm < 0: # Should not happen usually
-                 distance_change_percent = 100.0
-            else:
-                 distance_change_percent = 0.0
+             distance_change_percent = 0.0
         else:
-            if distance_diff_mm > 0: # Sink detected
-                distance_change_percent = (distance_diff_mm / base_distance) * 100.0
-            else:
-                # Rise or no change (ignored)
-                distance_change_percent = 0.0
+            # distance_diff_mm is already clamped to >= 0
+            distance_change_percent = (distance_diff_mm / base_distance) * 100.0
             
         status = SensorService.determine_status(device, tilt_change_percent, distance_change_percent)
         
         processed_reading = ProcessedSensorData(
             device_id=device.id,
             raw_data_id=raw_reading.id,
-            tilt_diff_x=abs(tilt_diff_x),
-            tilt_diff_y=abs(tilt_diff_y),
-            tilt_diff_z=abs(tilt_diff_z),
-            distance_diff_mm=abs(distance_diff_mm),
+            tilt_diff_x=tilt_diff_x, # Signed value
+            tilt_diff_y=tilt_diff_y, # Signed value
+            tilt_diff_z=tilt_diff_z, # Signed value
+            distance_diff_mm=distance_diff_mm, # Already clamped, no abs() needed
             tilt_change_percent=tilt_change_percent,
             distance_change_percent=distance_change_percent,
             status=status,
