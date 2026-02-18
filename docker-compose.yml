@@ -40,13 +40,6 @@ services:
       start_period: 30s
     networks:
       - structsense-network
-      - coolify
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.backend.rule=Host(`${DOMAIN_API}`)"
-      - "traefik.http.routers.backend.entrypoints=websecure"
-      - "traefik.http.routers.backend.tls.certresolver=letsencrypt"
-      - "traefik.http.services.backend.loadbalancer.server.port=8000"
 
   frontend:
     build:
@@ -66,14 +59,6 @@ services:
       - PORT=3000
     networks:
       - structsense-network
-      - coolify
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.frontend.rule=Host(`${DOMAIN_WEB}`)"
-      - "traefik.http.routers.frontend.entrypoints=websecure"
-      - "traefik.http.routers.frontend.tls.certresolver=letsencrypt"
-      - "traefik.http.services.frontend.loadbalancer.server.port=3000"
-
 volumes:
   timescale_data:
 
@@ -81,5 +66,3 @@ volumes:
 networks:
   structsense-network:
     driver: bridge
-  coolify:
-    external: true

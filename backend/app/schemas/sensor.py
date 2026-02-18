@@ -10,7 +10,6 @@ class SensorIngestRequest(BaseModel):
     tilt_x: float
     tilt_y: float
     tilt_z: float
-    tilt_z: float
     distance_mm: float
 
 class ProcessedSensorDataResponse(BaseModel):

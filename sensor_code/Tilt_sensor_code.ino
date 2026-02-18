@@ -56,7 +56,7 @@ float getDistanceMM() {
   digitalWrite(TRIG_PIN, LOW);
 
   long duration = pulseIn(ECHO_PIN, HIGH);
-  float distance = duration * 0.34 / 2; // Changed to 0.34 for millimeters
+  float distance = duration * 0.343 / 2; // Changed to 0.343 for millimeters (more precise)
   return distance;
 }
 
