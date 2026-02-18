@@ -10,12 +10,18 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import { format, subDays } from "date-fns"
-import { Loader2, RefreshCw, Activity, Ruler } from "lucide-react"
+import { Loader2, RefreshCw, Activity, Ruler, Download } from "lucide-react"
 import { DatePickerWithRange } from "@/components/ui/date-range-picker"
 import { DateRange } from "react-day-picker"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { AxisChart, AxisDataPoint } from "@/components/dashboard/axis-chart"
 import { DistanceChart, DistanceDataPoint } from "@/components/dashboard/distance-chart"
 import { PageHeader } from "@/components/dashboard/page-header"
@@ -153,6 +159,43 @@ export default function AnalysisPage() {
         }
     }
 
+    const handleExport = async (format: 'csv' | 'xlsx') => {
+        if (!selectedDeviceId) return
+
+        try {
+            const response = await fetch(
+                `${process.env.NEXT_PUBLIC_API_URL}/api/v1/sensor/devices/${selectedDeviceId}/export?format=${format}`
+            )
+
+            if (response.ok) {
+                // Create a blob from the response
+                const blob = await response.blob()
+                // Create a link element and trigger download
+                const url = window.URL.createObjectURL(blob)
+                const a = document.createElement('a')
+                a.href = url
+                // Try to get filename from content-disposition
+                const contentDisposition = response.headers.get('content-disposition')
+                let filename = `sensor_data.${format}`
+                if (contentDisposition) {
+                    const filenameMatch = contentDisposition.match(/filename="?([^"]+)"?/)
+                    if (filenameMatch && filenameMatch.length === 2)
+                        filename = filenameMatch[1]
+                }
+
+                a.download = filename
+                document.body.appendChild(a)
+                a.click()
+                window.URL.revokeObjectURL(url)
+                document.body.removeChild(a)
+            } else {
+                console.error("Failed to export data")
+            }
+        } catch (error) {
+            console.error("Export error:", error)
+        }
+    }
+
     return (
         <div className="flex flex-col gap-6 p-6">
             <PageHeader
@@ -193,6 +236,23 @@ export default function AnalysisPage() {
             {/* Toolbar for Filters */}
             <div className="flex justify-end items-center gap-4">
                 <DatePickerWithRange date={dateRange} setDate={setDateRange} />
+
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="outline">
+                            <Download className="mr-2 h-4 w-4" />
+                            Export
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                        <DropdownMenuItem onClick={() => handleExport('csv')}>
+                            Download CSV
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleExport('xlsx')}>
+                            Download Excel
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
 
                 <Button variant="outline" size="icon" onClick={() => fetchData(parseInt(selectedDeviceId))}>
                     <RefreshCw className="h-4 w-4" />
