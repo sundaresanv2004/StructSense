@@ -119,8 +119,8 @@ class SensorService:
         # RISE = Distance INCREASES (Structure moves away) => Negative difference
         # User Requirement: We only care about SINK. If it rises (negative), set to 0.
         raw_diff = base_distance - raw_reading.distance_mm
-        distance_diff_mm = max(0.0, raw_diff)
-        
+        distance_diff_mm = raw_diff
+                
         # Calculate percentage change for each axis individually
         # If baseline is 0, any deviation is considered 100% change
         def calc_pct_change(current, baseline):
