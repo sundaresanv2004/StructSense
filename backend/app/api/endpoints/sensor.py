@@ -1,7 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from typing import List
+from typing import List, Literal
+import csv
+import io
+from datetime import datetime
+import openpyxl
+from fastapi.responses import StreamingResponse
 
 from app.core.db import get_db
 from app.schemas.sensor import SensorIngestRequest, ProcessedSensorDataResponse
@@ -50,3 +55,98 @@ async def get_processed_data(
         .limit(limit)
     )
     return result.scalars().all()
+
+
+@router.get("/devices/{device_id}/export")
+async def export_sensor_data(
+    device_id: int,
+    format: Literal["csv", "xlsx"] = "csv",
+    limit: int = 1000,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Export processed sensor data as CSV or Excel.
+    """
+    # 1. Fetch Data
+    result = await db.execute(
+        select(ProcessedSensorData)
+        .where(ProcessedSensorData.device_id == device_id)
+        .order_by(ProcessedSensorData.created_at.desc())
+        .limit(limit)
+    )
+    data = result.scalars().all()
+    
+    filename = f"sensor_data_device_{device_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+
+    # 2. Generate File
+    if format == "csv":
+        output = io.StringIO()
+        writer = csv.writer(output)
+        
+        # Headers
+        headers = [
+            "ID", "Created At", "Status",
+            "Tilt Diff X", "Tilt Diff Y", "Tilt Diff Z",
+            "Distance Diff (mm)",
+            "Tilt Change %", "Distance Change %"
+        ]
+        writer.writerow(headers)
+        
+        # Rows
+        for row in data:
+            writer.writerow([
+                row.id,
+                row.created_at.isoformat(),
+                row.status,
+                row.tilt_diff_x,
+                row.tilt_diff_y,
+                row.tilt_diff_z,
+                row.distance_diff_mm,
+                row.tilt_change_percent,
+                row.distance_change_percent
+            ])
+            
+        output.seek(0)
+        return StreamingResponse(
+            io.BytesIO(output.getvalue().encode()),
+            media_type="text/csv",
+            headers={"Content-Disposition": f"attachment; filename={filename}.csv"}
+        )
+        
+    elif format == "xlsx":
+        workbook = openpyxl.Workbook()
+        sheet = workbook.active
+        sheet.title = "Sensor Data"
+        
+        # Headers
+        headers = [
+            "ID", "Created At", "Status",
+            "Tilt Diff X", "Tilt Diff Y", "Tilt Diff Z",
+            "Distance Diff (mm)",
+            "Tilt Change %", "Distance Change %"
+        ]
+        sheet.append(headers)
+        
+        # Rows
+        for row in data:
+            sheet.append([
+                row.id,
+                row.created_at.replace(tzinfo=None), # Excel doesn't like timezone aware datetimes sometimes
+                row.status,
+                row.tilt_diff_x,
+                row.tilt_diff_y,
+                row.tilt_diff_z,
+                row.distance_diff_mm,
+                row.tilt_change_percent,
+                row.distance_change_percent
+            ])
+            
+        output = io.BytesIO()
+        workbook.save(output)
+        output.seek(0)
+        
+        return StreamingResponse(
+            output,
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={"Content-Disposition": f"attachment; filename={filename}.xlsx"}
+        )
