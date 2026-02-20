@@ -64,7 +64,8 @@ class SensorService:
     async def ingest_sensor_data(
         db: AsyncSession,
         device: Device,
-        sensor_data: SensorIngestRequest
+        sensor_data: SensorIngestRequest,
+        timestamp: datetime | None = None
     ) -> ProcessedSensorData:
         """
         Process incoming sensor data.
@@ -81,7 +82,7 @@ class SensorService:
             tilt_y=sensor_data.tilt_y,
             tilt_z=sensor_data.tilt_z,
             distance_mm=sensor_data.distance_mm,
-            created_at=datetime.now(timezone.utc)
+            created_at=timestamp or datetime.now(timezone.utc)
         )
         db.add(raw_reading)
         await db.flush() # Flush to get the ID

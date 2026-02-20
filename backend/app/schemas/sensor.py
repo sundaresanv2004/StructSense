@@ -12,6 +12,12 @@ class SensorIngestRequest(BaseModel):
     tilt_z: float
     distance_mm: float
 
+class ManualSensorIngestRequest(SensorIngestRequest):
+    """
+    Schema for manual sensor data ingestion with custom timestamp.
+    """
+    timestamp: Optional[datetime] = None
+
 class ProcessedSensorDataResponse(BaseModel):
     """
     Schema for processed sensor data response.
