@@ -255,6 +255,8 @@ async def upload_processed_data(
     except Exception as e:
         await db.rollback()
         raise HTTPException(status_code=500, detail=f"An error occurred while processing the file: {str(e)}")
+
+@router.get("/devices/{device_id}/processed", response_model=List[ProcessedSensorDataResponse])
 async def get_processed_data(
     device_id: int,
     limit: int = 100,
