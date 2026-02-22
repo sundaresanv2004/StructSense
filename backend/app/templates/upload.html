@@ -236,8 +236,7 @@
                         this area to upload</p>
                     <span class="file-name" id="fileNameDisplay"></span>
                     <input type="file" id="fileInput" name="file"
-                        accept=".csv, .xlsx, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, text/csv"
-                        required>
+                        accept=".csv, .xlsx, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, text/csv">
                 </div>
             </div>
 
@@ -265,9 +264,8 @@
             // 1. Fetch Devices on Load
             try {
                 // Determine API URL based on where this page is hosted
-                const apiUrl = window.location.origin.includes('localhost')
-                    ? 'http://localhost:8000/api/v1/devices'
-                    : '/api/v1/devices'; // Relative for production
+                // Use absolute path relative to the current host
+                const apiUrl = '/api/v1/devices';
 
                 const response = await fetch(apiUrl);
                 if (response.ok) {
@@ -330,8 +328,8 @@
                 const deviceId = deviceSelect.value;
                 const file = fileInput.files[0];
 
-                if (!deviceId || !file) {
-                    showStatus("Please select a device and a file.", false);
+                if (!deviceId) {
+                    showStatus("Please select a device.", false);
                     return;
                 }
 
@@ -342,12 +340,12 @@
                 statusBox.style.display = "none";
 
                 const formData = new FormData();
-                formData.append("file", file);
+                if (file) {
+                    formData.append("file", file);
+                }
 
                 try {
-                    const uploadUrl = window.location.origin.includes('localhost')
-                        ? `http://localhost:8000/api/v1/sensor/devices/${deviceId}/upload`
-                        : `/api/v1/sensor/devices/${deviceId}/upload`;
+                    const uploadUrl = `/api/v1/sensor/devices/${deviceId}/upload`;
 
                     const response = await fetch(uploadUrl, {
                         method: 'POST',

@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
+import os
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from typing import List, Literal
@@ -71,13 +72,13 @@ async def ingest_manual_sensor_data(
 @router.post("/devices/{device_id}/upload", status_code=status.HTTP_201_CREATED)
 async def upload_processed_data(
     device_id: int,
-    file: UploadFile = File(...),
+    file: UploadFile = File(None),
     db: AsyncSession = Depends(get_db)
 ):
     """
     Upload processed sensor data from a CSV or Excel file and associate it with a device.
     Generates dummy raw sensor data (0s) to satisfy foreign key constraints.
-    Expected Columns (similar to export): Created At, Status, Tilt Diff X, Tilt Diff Y, Tilt Diff Z, Distance Diff (mm), Tilt Change %, Distance Change %
+    If no file is provided, attempts to read from a local temporary 'temp_uploads' folder.
     """
     device = await DeviceService.get_device(db, device_id)
     if not device:
@@ -86,8 +87,32 @@ async def upload_processed_data(
             detail=f"Device with ID '{device_id}' not found."
         )
 
-    content = await file.read()
-    filename = file.filename.lower()
+    # Temporary storage logic
+    temp_dir = os.path.join(os.getcwd(), "temp_uploads")
+    default_file_path = os.path.join(temp_dir, "sensor_data_processed.xlsx")
+
+    content = None
+    filename = ""
+
+    if file:
+        content = await file.read()
+        filename = file.filename.lower()
+        
+        # Save to temp storage for future re-use
+        os.makedirs(temp_dir, exist_ok=True)
+        with open(default_file_path, "wb") as f:
+            f.write(content)
+            
+    else:
+        # Try to read from temp storage
+        if not os.path.exists(default_file_path):
+            raise HTTPException(
+                status_code=400, 
+                detail="No file provided and no previously uploaded file found in temporary storage."
+            )
+        with open(default_file_path, "rb") as f:
+            content = f.read()
+        filename = "sensor_data_processed.xlsx"
     
     rows_processed = 0
     errors = []
