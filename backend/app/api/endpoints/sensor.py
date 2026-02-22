@@ -80,7 +80,7 @@ async def upload_processed_data(
     Generates dummy raw sensor data (0s) to satisfy foreign key constraints.
     If no file is provided, attempts to read from a local temporary 'temp_uploads' folder.
     """
-    device = await DeviceService.get_device(db, device_id)
+    device = await DeviceService.get_device_by_id(db, device_id)
     if not device:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
