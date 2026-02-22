@@ -1,11 +1,12 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from typing import List, Literal
 import csv
 import io
 import asyncio
-from datetime import datetime
+from datetime import datetime, timezone
+from dateutil.parser import parse as parse_date
 import openpyxl
 from fastapi.responses import StreamingResponse
 
@@ -67,7 +68,168 @@ async def ingest_manual_sensor_data(
     
     return reading
 
-@router.get("/devices/{device_id}/processed", response_model=List[ProcessedSensorDataResponse])
+@router.post("/devices/{device_id}/upload", status_code=status.HTTP_201_CREATED)
+async def upload_processed_data(
+    device_id: int,
+    file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Upload processed sensor data from a CSV or Excel file and associate it with a device.
+    Generates dummy raw sensor data (0s) to satisfy foreign key constraints.
+    Expected Columns (similar to export): Created At, Status, Tilt Diff X, Tilt Diff Y, Tilt Diff Z, Distance Diff (mm), Tilt Change %, Distance Change %
+    """
+    device = await DeviceService.get_device(db, device_id)
+    if not device:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Device with ID '{device_id}' not found."
+        )
+
+    content = await file.read()
+    filename = file.filename.lower()
+    
+    rows_processed = 0
+    errors = []
+
+    try:
+        from app.models.raw_sensor_data import RawSensorData
+        from app.models.processed_sensor_data import ProcessedSensorData
+        
+        if filename.endswith(".csv"):
+            import codecs
+            reader = csv.DictReader(codecs.iterdecode(io.BytesIO(content), 'utf-8'))
+            
+            for index, row in enumerate(reader):
+                try:
+                    # Map columns (fallback to lowercase matching if needed, but exact matches preferred)
+                    def get_val(keys, default=0.0):
+                        for k in keys:
+                            if k in row and row[k]:
+                                return float(row[k])
+                        return default
+                        
+                    created_at_raw = row.get("Created At") or row.get("created_at")
+                    if created_at_raw:
+                        created_at = parse_date(created_at_raw)
+                        if created_at.tzinfo is None:
+                            created_at = created_at.replace(tzinfo=timezone.utc)
+                    else:
+                        created_at = datetime.now(timezone.utc)
+
+                    status_val = row.get("Status") or row.get("status", "SAFE")
+                    tilt_x = get_val(["Tilt Diff X", "tilt_diff_x"])
+                    tilt_y = get_val(["Tilt Diff Y", "tilt_diff_y"])
+                    tilt_z = get_val(["Tilt Diff Z", "tilt_diff_z"])
+                    dist_mm = get_val(["Distance Diff (mm)", "distance_diff_mm"])
+                    tilt_pct = get_val(["Tilt Change %", "tilt_change_percent"])
+                    dist_pct = get_val(["Distance Change %", "distance_change_percent"])
+                    
+                    # 1. Create Mock Raw Data
+                    mock_raw = RawSensorData(
+                        device_id=device_id,
+                        tilt_x=0.0, tilt_y=0.0, tilt_z=0.0, distance_mm=0.0,
+                        created_at=created_at
+                    )
+                    db.add(mock_raw)
+                    await db.flush() # Flush to get ID
+                    
+                    # 2. Create Processed Data using real values
+                    processed = ProcessedSensorData(
+                        device_id=device_id,
+                        raw_data_id=mock_raw.id,
+                        tilt_diff_x=tilt_x,
+                        tilt_diff_y=tilt_y,
+                        tilt_diff_z=tilt_z,
+                        distance_diff_mm=dist_mm,
+                        tilt_change_percent=tilt_pct,
+                        distance_change_percent=dist_pct,
+                        status=status_val,
+                        created_at=created_at
+                    )
+                    db.add(processed)
+                    rows_processed += 1
+                except Exception as e:
+                    errors.append(f"Row {index+2}: {str(e)}")
+                    
+        elif filename.endswith(".xlsx"):
+            workbook = openpyxl.load_workbook(io.BytesIO(content), data_only=True)
+            sheet = workbook.active
+            headers = [cell.value for cell in sheet[1]]
+            
+            for index, row_cells in enumerate(sheet.iter_rows(min_row=2, values_only=True)):
+                if not any(row_cells): continue # Skip empty rows
+                
+                try:
+                    row = dict(zip(headers, row_cells))
+                    
+                    def get_val(keys, default=0.0):
+                        for k in keys:
+                            if k in row and row[k] is not None:
+                                return float(row[k])
+                        return default
+                    
+                    created_at_raw = row.get("Created At") or row.get("created_at")
+                    if isinstance(created_at_raw, datetime):
+                        created_at = created_at_raw
+                    elif created_at_raw:
+                        created_at = parse_date(str(created_at_raw))
+                    else:
+                        created_at = datetime.now(timezone.utc)
+                        
+                    if created_at.tzinfo is None:
+                        created_at = created_at.replace(tzinfo=timezone.utc)
+
+                    status_val = str(row.get("Status") or row.get("status") or "SAFE")
+                    tilt_x = get_val(["Tilt Diff X", "tilt_diff_x"])
+                    tilt_y = get_val(["Tilt Diff Y", "tilt_diff_y"])
+                    tilt_z = get_val(["Tilt Diff Z", "tilt_diff_z"])
+                    dist_mm = get_val(["Distance Diff (mm)", "distance_diff_mm"])
+                    tilt_pct = get_val(["Tilt Change %", "tilt_change_percent"])
+                    dist_pct = get_val(["Distance Change %", "distance_change_percent"])
+                    
+                    # 1. Create Mock Raw Data
+                    mock_raw = RawSensorData(
+                        device_id=device_id,
+                        tilt_x=0.0, tilt_y=0.0, tilt_z=0.0, distance_mm=0.0,
+                        created_at=created_at
+                    )
+                    db.add(mock_raw)
+                    await db.flush() # Flush to get ID
+                    
+                    # 2. Create Processed Data
+                    processed = ProcessedSensorData(
+                        device_id=device_id,
+                        raw_data_id=mock_raw.id,
+                        tilt_diff_x=tilt_x,
+                        tilt_diff_y=tilt_y,
+                        tilt_diff_z=tilt_z,
+                        distance_diff_mm=dist_mm,
+                        tilt_change_percent=tilt_pct,
+                        distance_change_percent=dist_pct,
+                        status=status_val,
+                        created_at=created_at
+                    )
+                    db.add(processed)
+                    rows_processed += 1
+                except Exception as e:
+                    errors.append(f"Row {index+2}: {str(e)}")
+        else:
+            raise HTTPException(status_code=400, detail="Invalid file format. Only .csv and .xlsx are supported.")
+
+        if rows_processed > 0:
+            await db.commit()
+        else:
+            await db.rollback()
+            
+        return {
+            "message": f"Successfully processed {rows_processed} entries.",
+            "errors": errors if errors else None
+        }
+        
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(status_code=500, detail=f"An error occurred while processing the file: {str(e)}")
 async def get_processed_data(
     device_id: int,
     limit: int = 100,

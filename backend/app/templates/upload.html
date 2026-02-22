@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Processed Data | StructSense</title>
+    <style>
+        :root {
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --success: #10b981;
+            --error: #ef4444;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 1rem;
+        }
+
+        .container {
+            background-color: var(--card-bg);
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05), 0 4px 6px rgba(0, 0, 0, 0.02);
+            width: 100%;
+            max-width: 480px;
+            padding: 2.5rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--text-main);
+        }
+
+        select {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1rem;
+            background-color: #fff;
+            color: var(--text-main);
+            transition: all 0.2s ease;
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            background-size: 1em;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .file-upload-wrapper {
+            position: relative;
+            border: 2px dashed var(--border-color);
+            border-radius: 12px;
+            padding: 2rem;
+            text-align: center;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            background-color: var(--bg-color);
+        }
+
+        .file-upload-wrapper:hover, .file-upload-wrapper.dragover {
+            border-color: var(--primary);
+            background-color: #eff6ff;
+        }
+
+        .file-upload-wrapper input[type="file"] {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .upload-icon {
+            width: 48px;
+            height: 48px;
+            fill: var(--text-muted);
+            margin-bottom: 1rem;
+            transition: fill 0.2s;
+        }
+
+        .file-upload-wrapper:hover .upload-icon {
+            fill: var(--primary);
+        }
+
+        .file-name {
+            display: block;
+            margin-top: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--primary);
+            word-break: break-all;
+        }
+
+        button[type="submit"] {
+            width: 100%;
+            padding: 0.875rem;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        button[type="submit"]:hover {
+            background-color: var(--primary-hover);
+        }
+
+        button[type="submit"]:disabled {
+            background-color: var(--text-muted);
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        #statusBox {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            display: none;
+        }
+
+        .status-success {
+            background-color: #ecfdf5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+
+        .status-error {
+            background-color: #fef2f2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+        
+        .spinner {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <h1>Upload Processed Data</h1>
+            <p>Select a device and attach your CSV or Excel file to inject processed readings.</p>
+        </div>
+
+        <form id="uploadForm">
+            <div class="form-group">
+                <label for="deviceSelect">Target Device</label>
+                <select id="deviceSelect" required>
+                    <option value="" disabled selected>Loading devices...</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Data File (.csv, .xlsx)</label>
+                <div class="file-upload-wrapper" id="dropZone">
+                    <svg class="upload-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.36 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/>
+                    </svg>
+                    <p style="color: var(--text-muted); font-size: 0.875rem; font-weight: 500;">Click or drag file to this area to upload</p>
+                    <span class="file-name" id="fileNameDisplay"></span>
+                    <input type="file" id="fileInput" name="file" accept=".csv, .xlsx, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, text/csv" required>
+                </div>
+            </div>
+
+            <button type="submit" id="submitBtn">
+                <span id="btnText">Upload Data</span>
+                <div class="spinner" id="spinner"></div>
+            </button>
+        </form>
+
+        <div id="statusBox"></div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", async () => {
+            const deviceSelect = document.getElementById('deviceSelect');
+            const fileInput = document.getElementById('fileInput');
+            const fileNameDisplay = document.getElementById('fileNameDisplay');
+            const dropZone = document.getElementById('dropZone');
+            const uploadForm = document.getElementById('uploadForm');
+            const submitBtn = document.getElementById('submitBtn');
+            const btnText = document.getElementById('btnText');
+            const spinner = document.getElementById('spinner');
+            const statusBox = document.getElementById('statusBox');
+
+            // 1. Fetch Devices on Load
+            try {
+                // Determine API URL based on where this page is hosted
+                const apiUrl = window.location.origin.includes('localhost') 
+                    ? 'http://localhost:8000/api/v1/devices' 
+                    : '/api/v1/devices'; // Relative for production
+                    
+                const response = await fetch(apiUrl);
+                if (response.ok) {
+                    const devices = await response.json();
+                    deviceSelect.innerHTML = '<option value="" disabled selected>Select a device</option>';
+                    devices.forEach(d => {
+                        const opt = document.createElement('option');
+                        opt.value = d.id;
+                        opt.textContent = `${d.name} (${d.uid})`;
+                        deviceSelect.appendChild(opt);
+                    });
+                } else {
+                    deviceSelect.innerHTML = '<option value="" disabled>Error loading devices</option>';
+                }
+            } catch (error) {
+                console.error("Failed to fetch devices:", error);
+                deviceSelect.innerHTML = '<option value="" disabled>Failed to connect to API</option>';
+            }
+
+            // 2. Handle File Input UI
+            fileInput.addEventListener('change', (e) => {
+                if(e.target.files.length > 0) {
+                    fileNameDisplay.textContent = e.target.files[0].name;
+                } else {
+                    fileNameDisplay.textContent = "";
+                }
+            });
+
+            // Drag and drop styles
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, preventDefaults, false);
+            });
+
+            function preventDefaults (e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropZone.addEventListener(eventName, () => dropZone.classList.add('dragover'), false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, () => dropZone.classList.remove('dragover'), false);
+            });
+
+            dropZone.addEventListener('drop', (e) => {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                if(files.length > 0) {
+                    fileInput.files = files;
+                    fileNameDisplay.textContent = files[0].name;
+                }
+            });
+
+            // 3. Handle Form Submission
+            uploadForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const deviceId = deviceSelect.value;
+                const file = fileInput.files[0];
+
+                if (!deviceId || !file) {
+                    showStatus("Please select a device and a file.", false);
+                    return;
+                }
+
+                // UI Loading State
+                submitBtn.disabled = true;
+                btnText.textContent = "Processing...";
+                spinner.style.display = "block";
+                statusBox.style.display = "none";
+
+                const formData = new FormData();
+                formData.append("file", file);
+
+                try {
+                    const uploadUrl = window.location.origin.includes('localhost') 
+                        ? `http://localhost:8000/api/v1/sensors/devices/${deviceId}/upload`
+                        : `/api/v1/sensors/devices/${deviceId}/upload`;
+
+                    const response = await fetch(uploadUrl, {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        showStatus(data.message || "Upload successful!", true);
+                        uploadForm.reset();
+                        fileNameDisplay.textContent = "";
+                    } else {
+                        showStatus(data.detail || "Upload failed.", false);
+                    }
+                } catch (error) {
+                    showStatus("Network error occurred during upload. " + error.message, false);
+                } finally {
+                    // Reset UI State
+                    submitBtn.disabled = false;
+                    btnText.textContent = "Upload Data";
+                    spinner.style.display = "none";
+                }
+            });
+
+            function showStatus(message, isSuccess) {
+                statusBox.textContent = message;
+                statusBox.className = isSuccess ? 'status-success' : 'status-error';
+                statusBox.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>

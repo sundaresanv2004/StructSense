@@ -1,4 +1,5 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from app.core.config import settings
@@ -33,3 +34,9 @@ if settings.cors_origins:
     )
 
 app.include_router(api_router, prefix=settings.API_V1_STR)
+
+templates = Jinja2Templates(directory="app/templates")
+
+@app.get("/upload")
+async def get_upload_page(request: Request):
+    return templates.TemplateResponse("upload.html", {"request": request})
