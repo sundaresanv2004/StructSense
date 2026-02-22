@@ -8,6 +8,7 @@ import io
 import asyncio
 from datetime import datetime, timezone
 from dateutil.parser import parse as parse_date
+import pytz
 import openpyxl
 from fastapi.responses import StreamingResponse
 
@@ -138,7 +139,9 @@ async def upload_processed_data(
                     if created_at_raw:
                         created_at = parse_date(created_at_raw)
                         if created_at.tzinfo is None:
-                            created_at = created_at.replace(tzinfo=timezone.utc)
+                            # Assume IST for naive uploaded times
+                            ist_tz = pytz.timezone('Asia/Kolkata')
+                            created_at = ist_tz.localize(created_at).astimezone(pytz.UTC)
                     else:
                         created_at = datetime.now(timezone.utc)
 
@@ -203,7 +206,9 @@ async def upload_processed_data(
                         created_at = datetime.now(timezone.utc)
                         
                     if created_at.tzinfo is None:
-                        created_at = created_at.replace(tzinfo=timezone.utc)
+                        # Assume IST for naive uploaded times
+                        ist_tz = pytz.timezone('Asia/Kolkata')
+                        created_at = ist_tz.localize(created_at).astimezone(pytz.UTC)
 
                     status_val = str(row.get("Status") or row.get("status") or "SAFE")
                     tilt_x = get_val(["Tilt Diff X", "tilt_diff_x"])
